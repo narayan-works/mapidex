@@ -1,0 +1,7 @@
+name=Mapidex - demo
+author=Narayan Ashanahalli
+description=Demo: 1-bit detour Pokédex for Playdate
+bundleID=works.narayan.mapidex.demo
+version=0.1.0
+buildNumber=10
+imagePath=SystemAssets

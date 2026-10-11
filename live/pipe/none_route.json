@@ -1,0 +1,59 @@
+{
+  "place": {
+    "name": "no detour",
+    "lat": 37.7989871,
+    "lng": -122.4349331
+  },
+  "summary": "foot - 0.9 mi - 4 min",
+  "detourIndex": 1,
+  "viaStep": 999,
+  "path": {
+    "w": 180,
+    "h": 100,
+    "pts": [
+      [
+        113,
+        86
+      ],
+      [
+        113,
+        82
+      ],
+      [
+        113,
+        77
+      ],
+      [
+        94,
+        77
+      ],
+      [
+        94,
+        64
+      ],
+      [
+        67,
+        64
+      ],
+      [
+        67,
+        14
+      ],
+      [
+        74,
+        14
+      ]
+    ]
+  },
+  "instructions": [
+    "Head out - 38 ft",
+    "Turn Left - 5 ft",
+    "Turn Right - 60 ft",
+    "Turn Right - 217 ft",
+    "Turn Left onto Buchanan Street - 147 ft",
+    "Turn Right onto North Point Street - 293 ft",
+    "End Of Road Left onto Fillmore Street - 540 ft",
+    "Turn Left onto Greenwich Street - 83 ft",
+    "Arrive - home"
+  ]
+}

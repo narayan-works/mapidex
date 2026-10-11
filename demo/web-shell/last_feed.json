@@ -1,0 +1,221 @@
+{
+  "route": {
+    "from": "Founders Inc",
+    "to": "2143 Greenwich St",
+    "summary": "foot \u00b7 0.9 mi \u00b7 4 min",
+    "path": {
+      "w": 180,
+      "h": 100,
+      "pts": [
+        [
+          165,
+          8
+        ],
+        [
+          168,
+          11
+        ],
+        [
+          172,
+          17
+        ],
+        [
+          164,
+          19
+        ],
+        [
+          160,
+          20
+        ],
+        [
+          156,
+          20
+        ],
+        [
+          138,
+          21
+        ],
+        [
+          131,
+          21
+        ],
+        [
+          107,
+          22
+        ],
+        [
+          103,
+          25
+        ],
+        [
+          103,
+          26
+        ],
+        [
+          105,
+          30
+        ],
+        [
+          108,
+          36
+        ],
+        [
+          105,
+          37
+        ],
+        [
+          57,
+          39
+        ],
+        [
+          8,
+          41
+        ],
+        [
+          12,
+          49
+        ],
+        [
+          22,
+          68
+        ],
+        [
+          26,
+          70
+        ],
+        [
+          29,
+          72
+        ],
+        [
+          35,
+          82
+        ],
+        [
+          37,
+          86
+        ],
+        [
+          40,
+          92
+        ],
+        [
+          68,
+          90
+        ]
+      ]
+    },
+    "instructions": [
+      "Head out \u00b7 118 ft",
+      "Turn right \u00b7 197 ft",
+      "Turn right \u00b7 0.1 mi",
+      "Turn Left onto Buchanan Street \u00b7 482 ft",
+      "Turn Right onto North Point Street \u00b7 0.2 mi",
+      "End Of Road Left onto Fillmore Street \u00b7 0.3 mi",
+      "Turn Left onto Greenwich Street \u00b7 284 ft",
+      "Arrive \u00b7 destination"
+    ]
+  },
+  "categories": {
+    "relax": [
+      {
+        "name": "Equator Coffees",
+        "lat": 37.8064,
+        "lng": -122.4315
+      },
+      {
+        "name": "R\u00e9veille Coffee",
+        "lat": 37.8005,
+        "lng": -122.4365
+      },
+      {
+        "name": "Fort Mason Great Meadow",
+        "lat": 37.8072,
+        "lng": -122.4305
+      }
+    ],
+    "play": [
+      {
+        "name": "Fort Mason Center",
+        "lat": 37.8067218,
+        "lng": -122.4318093
+      },
+      {
+        "name": "Museo Italo Americano",
+        "lat": 37.8069681,
+        "lng": -122.4314174
+      },
+      {
+        "name": "Marina Green",
+        "lat": 37.8066027,
+        "lng": -122.4391166
+      }
+    ],
+    "social": [
+      {
+        "name": "Mel's Drive-in",
+        "lat": 37.7995505,
+        "lng": -122.4370481
+      },
+      {
+        "name": "Naked Fish Sushi",
+        "lat": 37.800782,
+        "lng": -122.437928
+      },
+      {
+        "name": "Mamacita",
+        "lat": 37.8000373,
+        "lng": -122.4414945
+      }
+    ],
+    "essentials": [
+      {
+        "name": "Marina Supermarket",
+        "lat": 37.8000223,
+        "lng": -122.4416127
+      },
+      {
+        "name": "Le Marais Bakery",
+        "lat": 37.8007246,
+        "lng": -122.4376692
+      },
+      {
+        "name": "Fort Mason Market & Deli",
+        "lat": 37.8065,
+        "lng": -122.4312
+      }
+    ]
+  },
+  "selected": "social",
+  "selected_places": [
+    {
+      "name": "Mel's Drive-in",
+      "lat": 37.7995505,
+      "lng": -122.4370481
+    },
+    {
+      "name": "Naked Fish Sushi",
+      "lat": 37.800782,
+      "lng": -122.437928
+    },
+    {
+      "name": "Mamacita",
+      "lat": 37.8000373,
+      "lng": -122.4414945
+    }
+  ],
+  "meta": {
+    "office": {
+      "lat": 37.8067,
+      "lng": -122.4318,
+      "label": "Founders Inc / Fort Mason"
+    },
+    "home": {
+      "lat": 37.799,
+      "lng": -122.4349,
+      "label": "2143 Greenwich St"
+    },
+    "source": "OSRM + ideation-curated OSM places",
+    "curated_by": "ideation"
+  }
+}

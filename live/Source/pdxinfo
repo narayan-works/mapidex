@@ -1,0 +1,7 @@
+name=Mapidex - live
+author=Narayan Ashanahalli
+description=Live wiring build of the 1-bit detour Pokédex (experimental)
+bundleID=com.narayan.mapidex.live
+version=0.2.0
+buildNumber=1
+imagePath=SystemAssets

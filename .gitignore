@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.iml
+
+# Playdate build outputs (build with pdc; share zips via GitHub Releases)
+*.pdx
+*.pdx.zip
+
+# Android / Gradle
+.gradle/
+local.properties
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Python
+__pycache__/
+*.pyc
+
+# Neon local snaps (hi-res)
+live/captures_local/
+demo/captures_local/

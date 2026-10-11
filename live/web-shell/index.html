@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mapidex — Playdate mirror</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #3a3a3a; color: #ddd;
+    font-family: ui-monospace, Menlo, monospace;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px; padding: 20px 12px;
+  }
+  .label { font-size: 11px; color: #aaa; text-align: center; max-width: 420px; line-height: 1.35; }
+  .pd {
+    background: #ffc83d; border-radius: 28px; padding: 22px 22px 18px;
+    box-shadow: 0 12px 0 #c99200, 0 18px 40px rgba(0,0,0,.45);
+    width: 460px; overflow: hidden;
+  }
+  .pd-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px; }
+  .pd-logo { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: #5a3a00; text-transform: uppercase; }
+  .menu-dot { width: 10px; height: 10px; border-radius: 50%; background: #5a3a00; opacity: .35; }
+  .lcd-bezel {
+    background: #1a1a1a; border-radius: 6px; padding: 8px;
+    width: 416px; height: 256px; overflow: hidden;
+  }
+  #lcd {
+    width: 400px; height: 240px; background: #fff; color: #000;
+    overflow: hidden; position: relative; contain: strict;
+    -webkit-font-smoothing: none;
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+  }
+  .pd-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 0 8px; }
+  .dpad { width: 54px; height: 54px; background: #2a2a2a; border-radius: 8px; opacity: .85; }
+  .crank-hw {
+    width: 36px; height: 36px; border-radius: 50%; border: 3px solid #8a6a10;
+    background: #ffe08a; color: #5a3a00; font-size: 9px; font-weight: 700; cursor: pointer;
+  }
+  .ab-hw { display: flex; gap: 12px; }
+  .ab-hw button {
+    width: 38px; height: 38px; border-radius: 50%; border: 0;
+    background: #2a2a2a; color: #eee; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .ext { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .ext button {
+    font: inherit; font-size: 12px; background: #222; color: #eee;
+    border: 1px solid #555; border-radius: 6px; padding: 8px 12px; cursor: pointer;
+  }
+  .ext button.pri { background: #eee; color: #111; border-color: #eee; }
+  .note { font-size: 11px; color: #888; text-align: center; min-height: 1.4em; }
+
+  .pad { padding: 8px; width: 400px; height: 240px; display: flex; flex-direction: column; background: #fff; color: #000; overflow: hidden; position: absolute; inset: 0; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .t10 { font-size: 10px; } .t11 { font-size: 11px; } .t14 { font-size: 14px; font-weight: 700; } .t20 { font-size: 20px; font-weight: 700; }
+  .badge { border: 2px solid #000; padding: 0 4px; font-size: 9px; text-transform: uppercase; }
+  .list { list-style: none; margin-top: 8px; }
+  .list li { padding: 4px; font-size: 11px; display: flex; justify-content: space-between; }
+  .list li.on { background: #000; color: #fff; }
+  .grow { flex: 1; }
+  .center { flex: 1; display: grid; place-items: center; text-align: center; }
+  .line1 { font-size: 10px; white-space: nowrap; overflow: hidden; }
+  .hero { font-size: 14px; font-weight: 700; line-height: 1.15; }
+  .actions, .path-actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; flex: none;
+  }
+  .actions span, .path-actions span {
+    border: 2px solid #000; text-align: center; font-size: 10px; padding: 5px 4px;
+  }
+  .actions span.heavy, .path-actions span.heavy { background: #000; color: #fff; }
+  .actions span.muted-act { opacity: .35; border-style: dashed; }
+
+  .path-band {
+    display: grid; grid-template-columns: 1fr 148px; gap: 8px;
+    flex: 1; min-height: 0; align-items: stretch;
+  }
+  .path-left { display: flex; flex-direction: column; min-width: 0; align-items: stretch; text-align: left; padding-right: 8px; overflow: hidden; }
+  .path-left .line1 { width: 100%; text-align: center; }
+  .path-left .arrow-wrap { width: 100%; display: flex; justify-content: center; }
+  .onto-label { font-size: 10px; font-weight: 400; text-align: left; }
+  .street-line { font-size: 14px; font-weight: 700; line-height: 1.15; margin-top: 2px; text-align: left; }
+  .leg-bar { display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center; margin-top: 12px; font-size: 10px; width: 100%; text-align: left; }
+  .path-map {
+    width: 148px; height: 100%; border: 2px solid #000; background: #fff;
+    position: relative; align-self: stretch; justify-self: end;
+  }
+  .path-map svg { width: 100%; height: 100%; display: block; }
+
+  .arrow-big {
+    width: 88px; height: 88px; border: 2px solid #000; border-radius: 50%;
+    display: grid; place-items: center; margin: 22px 0 10px; flex: none;
+  }
+  .arrow-big svg { width: 56px; height: 56px; }
+  .arrow-big path, .arrow-big polyline {
+    fill: none; stroke: #000; stroke-width: 3.25; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .onto-label { font-size: 10px; font-weight: 700; }
+  .street-line { font-size: 13px; font-weight: 700; line-height: 1.15; margin-top: 2px; max-width: 100%; }
+  .leg-bar {
+    display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;
+    margin-top: 12px; font-size: 10px; width: 100%;
+  }
+  .leg-bar .track { height: 6px; border: 2px solid #000; overflow: hidden; }
+  .leg-bar .fill { height: 100%; background: #000; width: 40%; }
+
+  .tray {
+    position: absolute; left: 8px; right: 8px; bottom: 40px;
+    border: 2px solid #000; background: #fff; padding: 4px; z-index: 5;
+  }
+  .tray .ti { font-size: 10px; padding: 8px 6px; display: flex; justify-content: space-between; }
+  .tray .ti.on { background: #000; color: #fff; }
+
+  .ask-split {
+    display: grid; grid-template-columns: 148px 1fr; gap: 8px;
+    flex: 1; min-height: 0; align-items: stretch;
+  }
+  .ask-split .card-img {
+    width: 148px; height: 100%; min-height: 168px; border: 2px solid #000;
+    display: grid; place-items: center; font-size: 9px; text-transform: uppercase;
+    background: repeating-linear-gradient(45deg, #000 0 1px, transparent 1px 4px), #fff;
+  }
+  .ask-info { display: flex; flex-direction: column; text-align: left; min-width: 0; }
+  .ask-info .layer-text { font-size: 11px; line-height: 1.2; max-height: 2.4em; overflow: hidden; margin-top: 2px; }
+
+  .task-row {
+    display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center;
+    padding: 5px 4px; font-size: 11px;
+  }
+  .task-row.on { background: #000; color: #fff; }
+  .task-meta { font-size: 9px; opacity: .85; margin-top: 1px; }
+  .ring { width: 28px; height: 28px; }
+  .ring svg { width: 28px; height: 28px; display: block; }
+  .ring .track { fill: none; stroke: #000; stroke-width: 3; opacity: .25; }
+  .ring .prog { fill: none; stroke: #000; stroke-width: 3; transform: rotate(-90deg); transform-origin: 16px 16px; }
+  .task-row.on .ring .track { stroke: #fff; opacity: .4; }
+  .task-row.on .ring .prog { stroke: #fff; }
+  .lvl { border: 2px solid #000; padding: 5px 6px; margin-top: 4px; }
+  .lvl-top { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px; }
+  .lvl-name { font-weight: 700; font-size: 11px; }
+  .lvl-track { height: 14px; border: 2px solid #000; overflow: hidden; }
+  .lvl-fill { height: 100%; background: #000; }
+
+  .countdown {
+    position: absolute; inset: 0; background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20;
+  }
+  .countdown .n { font-size: 64px; font-weight: 700; line-height: 1; }
+  .countdown .hint { font-size: 10px; margin-top: 10px; }
+  .saved li { list-style: none; font-size: 11px; padding: 4px 0; border-bottom: 2px solid #000; }
+  .saved li:last-child { border: 0; }
+  .empty { text-align: center; margin-top: 36px; font-size: 11px; }
+
+  .gist-row {
+    display: flex; justify-content: space-between; width: 100%;
+    font-size: 10px; margin-bottom: 2px;
+  }
+
+  .logo-word {
+    font-family: "Roobert", "Asheville Sans", "Helvetica Neue", sans-serif;
+    font-weight: 800; font-size: 36px; letter-spacing: 0.02em;
+    line-height: 1; color: #000; position: relative;
+  }
+  .logo-sparse {
+    /* density via staggered pixel-ish opacity on letter spans */
+  }
+  .logo-sparse span {
+    display: inline-block;
+  }
+  .cd-logo-wrap {
+    position: absolute; inset: 0;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cd-logo-wrap .cd-num {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 88px; font-weight: 800; color: #fff;
+    pointer-events: none; z-index: 1;
+  }
+  .cd-logo-wrap .breath {
+    position: relative; z-index: 2;
+    font-family: "Roobert", "Asheville Sans", "Helvetica Neue", sans-serif;
+    font-weight: 800; font-size: 48px; letter-spacing: 0.02em;
+    /* black ink; letter bowls stay transparent so white digit shows through */
+    color: #000;
+    -webkit-text-stroke: 3px #000;
+    paint-order: stroke fill;
+    background: #000;
+    /* punch bowls: use text as mask so only outlines/ink cover the white digit */
+    mix-blend-mode: lighten;
+    animation: breath 1.1s ease-in-out infinite;
+    user-select: none;
+  }
+  /* Better cutout simulation: stacked white digit under black logo with transparent counters */
+  .cd-logo-wrap .breath-ink {
+    position: relative; z-index: 2;
+    font-family: "Roobert", "Asheville Sans", "Helvetica Neue", sans-serif;
+    font-weight: 800; font-size: 48px; letter-spacing: 0.02em;
+    color: #000;
+    text-shadow:
+      -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+      -3px 0 0 #000, 3px 0 0 #000, 0 -3px 0 #000, 0 3px 0 #000;
+    animation: breath 1.1s ease-in-out infinite;
+    /* leave letter interiors open — digit shows in counters */
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 4px #000;
+    user-select: none;
+  }
+  @keyframes breath {
+    0%, 100% { transform: scale(0.94); }
+    50% { transform: scale(1.05); }
+  }
+</style>
+</head>
+<body>
+  <p class="label">Mapidex web mirror — 400x240. A/B + discrete crank. Judgments only inside the LCD.</p>
+  <div class="pd">
+    <div class="pd-top"><span class="pd-logo">playdate</span><span class="menu-dot"></span></div>
+    <div class="lcd-bezel"><div id="lcd" tabindex="0"></div></div>
+    <div class="pd-bottom">
+      <div class="dpad"></div>
+      <button type="button" class="crank-hw" id="crank">CR</button>
+      <div class="ab-hw">
+        <button type="button" id="btnB">B</button>
+        <button type="button" id="btnA">A</button>
+      </div>
+    </div>
+  </div>
+  <div class="ext">
+    <button type="button" id="tickPrev">crank -</button>
+    <button type="button" id="tickNext">crank +</button>
+    <button type="button" class="pri" id="doA">A</button>
+    <button type="button" id="doB">B</button>
+  </div>
+  <p class="note" id="note"></p>
+<script>
+
+const CATEGORIES = ["relax", "play", "social", "essentials"];
+const TRAY = ["Capture", "Ask", "Tasks"];
+const DAILY = [
+  { id: "leaves", label: "capture leaves", max: 5 },
+  { id: "doors", label: "capture doors", max: 5 },
+  { id: "signs", label: "capture signs", max: 5 }
+];
+const ASK = {
+  title: "Golden Gate Bridge",
+  kind: "place",
+  layers: [
+    { tag: "whats that?", text: "A big orange bridge people walk and drive across." },
+    { tag: "location", text: "Straddles the Golden Gate Strait, SF side near the Presidio." },
+    { tag: "facts", text: "Opened 1937. About 1.7 mi long. International Orange." },
+    { tag: "hours", text: "Sidewalks usually open; check wind / closures." }
+  ]
+};
+
+let FEED = {
+  gist: "0.9 mi - 4 min",
+  summary: "Founders Inc -> Greenwich",
+  turns: [
+    "Head out - 118 ft",
+    "Turn right - 197 ft",
+    "Turn right - 0.1 mi",
+    "Turn Left onto Buchanan Street - 482 ft",
+    "Turn Right onto North Point Street - 0.2 mi",
+    "Left onto Fillmore Street - 0.3 mi",
+    "Left onto Greenwich Street - 284 ft",
+    "Arrive - destination"
+  ],
+  places: ["Mel's Drive-in", "Naked Fish Sushi", "Mamacita"],
+  placesByCat: null
+};
+
+function ascii(s) {
+  return String(s || "").normalize("NFKD").replace(/[^\x00-\x7F]/g, "");
+}
+function stripFoot(s) {
+  return String(s || "").replace(/^foot\s*[·•\-]\s*/i, "").trim();
+}
+function loadJSON(key, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(key) || "null"); return v == null ? fallback : v; } catch (_) { return fallback; }
+}
+const state = {
+  screen: "splash", cat: 2, stop: 0, layer: 0, loadProg: 0,
+  tray: false, trayIdx: 0, taskIdx: 0, countdown: null, returnTo: "path",
+  tasks: loadJSON("mapidex_tasks_v3", {}),
+  xp: loadJSON("mapidex_xp_v3", 0),
+  saved: loadJSON("mapidex_saved_v3", [])
+};
+
+function placesForCat() {
+  const k = CATEGORIES[state.cat];
+  if (FEED.placesByCat && FEED.placesByCat[k]) return FEED.placesByCat[k];
+  return FEED.places;
+}
+function detourPlace() {
+  const list = placesForCat();
+  if (!list || !list.length) return "";
+  if (CATEGORIES[state.cat] === "play") {
+    const mg = list.find(n => /marina green/i.test(n));
+    if (mg) return mg;
+  }
+  return list[0];
+}
+function stops() {
+  const turns = (FEED.turns || []).map(t => ({ kind: "turn", text: t }));
+  const place = detourPlace();
+  if (!place || turns.length < 3) return turns;
+  const mid = Math.max(1, Math.floor(turns.length / 2));
+  return [...turns.slice(0, mid), { kind: "via", text: place }, ...turns.slice(mid)];
+}
+function askLayers() {
+  return ASK.kind === "place" ? ASK.layers : ASK.layers.filter(l => l.tag !== "hours");
+}
+
+function logoSpans(density) {
+  // density 0..1 — fewer letters opaque when sparse
+  const word = "MaPeDex";
+  const d = Math.max(0, Math.min(1, density));
+  return word.split("").map((ch, i) => {
+    // staggered reveal left→right with some speckled early pixels
+    const thresh = (i + 0.5) / word.length;
+    const speck = ((i * 37) % 10) / 10;
+    const on = d >= thresh || (d > 0.08 && speck < d * 1.2);
+    const op = on ? Math.min(1, 0.25 + d * 0.9) : Math.max(0.05, d * 0.15);
+    return `<span style="opacity:${op.toFixed(2)}">${ch}</span>`;
+  }).join("");
+}
+function note(t) {
+  const n = document.getElementById("note");
+  if (n) n.textContent = t;
+}
+
+function turnKind(text) {
+  const s = String(text || "").toLowerCase();
+  if (/arrive/.test(s)) return "arrive";
+  if (/left/.test(s)) return "left";
+  if (/right/.test(s)) return "right";
+  return "straight";
+}
+function parseDistFt(text) {
+  const m = String(text || "").match(/(\d+(?:\.\d+)?)\s*(ft|mi)\b/i);
+  if (!m) return 80;
+  const n = parseFloat(m[1]);
+  return m[2].toLowerCase() === "mi" ? n * 5280 : n;
+}
+function formatTurn(text) {
+  const raw = String(text || "");
+  const kind = turnKind(raw);
+  const distM = raw.match(/(\d+(?:\.\d+)?)\s*(ft|mi)\b/i);
+  const dist = distM ? distM[1] + " " + distM[2].toLowerCase() : "";
+  let rest = raw.replace(/\s*[-·]\s*\d+(?:\.\d+)?\s*(ft|mi)\b/ig, "").replace(/\s+/g, " ").trim();
+  let street = "";
+  const ontoM = rest.match(/onto\s+(.+)$/i);
+  if (ontoM) street = ontoM[1].trim();
+  else {
+    street = rest
+      .replace(/^turn\s+(left|right)\s*/i, "")
+      .replace(/^head\s+out\s*-?\s*/i, "")
+      .replace(/^continue(\s+on)?\s*/i, "")
+      .replace(/^(left|right)\s+/i, "")
+      .replace(/^end\s+of\s+road\s+(left|right)\s+/i, "")
+      .replace(/^arrive\s*-?\s*/i, "")
+      .trim();
+  }
+  let name = street;
+  if (!name || /^(left|right|out|ahead|destination)$/i.test(name)) {
+    name = kind === "arrive" ? "home" : "next corner";
+  }
+  if (kind === "arrive") name = "home";
+  const onto = kind === "arrive" ? "to" : ((kind === "left" || kind === "right") ? "onto/towards" : "towards");
+  const inDist = dist ? ("in " + dist) : "";
+  return { kind, onto, street: name, inDist };
+}
+function arrowBig(kind) {
+  if (kind === "left") return `<svg viewBox="0 0 48 48" shape-rendering="crispEdges"><path d="M28 42 V16 H14" fill="none" stroke="#000" stroke-width="4" stroke-linejoin="miter"/><polygon points="20,8 8,16 20,24" fill="#000"/></svg>`;
+  if (kind === "right") return `<svg viewBox="0 0 48 48" shape-rendering="crispEdges"><path d="M20 42 V16 H34" fill="none" stroke="#000" stroke-width="4" stroke-linejoin="miter"/><polygon points="28,8 40,16 28,24" fill="#000"/></svg>`;
+  if (kind === "arrive") return `<svg viewBox="0 0 48 48" shape-rendering="crispEdges"><path d="M24 42 V14" fill="none" stroke="#000" stroke-width="4"/><polygon points="14,22 24,10 34,22" fill="#000"/><rect x="20" y="4" width="8" height="8" fill="#000"/></svg>`;
+  return `<svg viewBox="0 0 48 48" shape-rendering="crispEdges"><path d="M24 42 V14" fill="none" stroke="#000" stroke-width="4"/><polygon points="14,22 24,10 34,22" fill="#000"/></svg>`;
+}
+function eqTriangle(cx, cy, size) {
+  // equilateral, point-up
+  const h = size * Math.sqrt(3) / 2;
+  const x1 = cx, y1 = cy - h * 2 / 3;
+  const x2 = cx - size / 2, y2 = cy + h / 3;
+  const x3 = cx + size / 2, y3 = cy + h / 3;
+  return `<polygon points="${x1.toFixed(1)},${y1.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)} ${x3.toFixed(1)},${y3.toFixed(1)}" fill="#000"/>`;
+}
+
+/** Scaled zigzag from real turns: L/R change heading, length ∝ distance. Start at bottom, walk up; mirrored so map L/R = arrows. */
+function pathMapSvg(stopIndex, total, viaIndex) {
+  const W = 148, H = 200, pad = 14;
+  const short = Math.min(W, H);
+  const markS = Math.max(3, short / 28);       // office ○ / home ■ small matched
+  const triS = Math.max(10, short / 14);       // ▲ larger
+
+  const steps = stops().filter(s => s.kind === "turn");
+  // Build polyline in heading space: 0 = up (screen -Y). Mirror: left turn decreases heading.
+  let heading = 0; // radians, 0 = up
+  const raw = [[0, 0]];
+  for (const t of steps) {
+    const kind = turnKind(t.text);
+    if (kind === "left") heading -= Math.PI / 2;
+    else if (kind === "right") heading += Math.PI / 2;
+    const dist = parseDistFt(t.text);
+    const len = Math.max(40, dist); // keep tiny segments visible
+    const x = raw[raw.length - 1][0] + Math.sin(heading) * len;
+    const y = raw[raw.length - 1][1] - Math.cos(heading) * len; // up = -y in raw before fit
+    raw.push([x, y]);
+  }
+  if (raw.length < 2) raw.push([0, -100]);
+
+  // Fit to card: start at bottom-center-ish, preserve aspect, pad inset
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of raw) { minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); }
+  const rw = Math.max(1, maxX - minX), rh = Math.max(1, maxY - minY);
+  const boxW = W - pad * 2, boxH = H - pad * 2;
+  const scale = Math.min(boxW / rw, boxH / rh) * 0.92;
+  // After scale: put start (raw[0]) near bottom; flip Y so increasing walk goes up the card
+  const pts = raw.map(p => {
+    const x = pad + (p[0] - minX) * scale + (boxW - rw * scale) / 2;
+    const y = pad + (p[1] - minY) * scale + (boxH - rh * scale) / 2;
+    return [x, y];
+  });
+  // Ensure start is the lower point: if start above end, flip vertically around mid
+  if (pts[0][1] < pts[pts.length - 1][1]) {
+    const midY = (Math.min(...pts.map(p => p[1])) + Math.max(...pts.map(p => p[1]))) / 2;
+    for (const p of pts) p[1] = midY * 2 - p[1];
+  }
+
+  // densify for smoother progress / you-dot
+  const dense = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    const segs = 4;
+    for (let s = 0; s < segs; s++) {
+      const u = s / segs;
+      dense.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]);
+    }
+  }
+  dense.push(pts[pts.length - 1]);
+
+  // Via sits at midpoint of path
+  const mid = Math.floor(dense.length / 2);
+  let you;
+  if (viaIndex != null && stopIndex === viaIndex) you = mid;
+  else {
+    const t = total > 1 ? stopIndex / (total - 1) : 0;
+    you = Math.round(t * (dense.length - 1));
+    if (viaIndex != null && stopIndex < viaIndex) you = Math.min(you, mid - 1);
+    if (viaIndex != null && stopIndex > viaIndex) you = Math.max(you, mid + 1);
+  }
+  you = Math.max(0, Math.min(dense.length - 1, you));
+
+  function poly(a, b, thick) {
+    const slice = dense.slice(a, b + 1);
+    if (slice.length < 2) return "";
+    const d = slice.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+    return `<path d="${d}" fill="none" stroke="#000" stroke-width="${thick ? 5 : 1.5}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  const work = dense[0], home = dense[dense.length - 1], det = dense[mid];
+  const [x, y] = dense[you];
+  // office ○ · home ■ · ▲ detour · you ●
+  const marks =
+    `<circle cx="${work[0]}" cy="${work[1]}" r="${markS}" fill="#000"/>` +
+    `<rect x="${home[0] - markS}" y="${home[1] - markS}" width="${markS * 2}" height="${markS * 2}" fill="#000"/>` +
+    eqTriangle(det[0], det[1], triS);
+  const youMark = (viaIndex != null && stopIndex === viaIndex)
+    ? ""
+    : `<circle cx="${x}" cy="${y}" r="${markS + 0.5}" fill="#000"/>`;
+  return `<div class="path-map"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${poly(0, you, false)}${poly(you, dense.length - 1, true)}${marks}${youMark}</svg></div>`;
+}
+
+function levelBar() {
+  const per = 15;
+  const lv = Math.floor(state.xp / per) + 1;
+  const into = state.xp % per;
+  const pct = Math.round((into / per) * 100);
+  return `<div class="xp-pack"><span class="t10">Lv ${lv}</span><div class="xp-track"><div class="xp-fill" style="width:${pct}%"></div></div><span class="t10">${into}/${per}</span></div>`;
+}
+function ringSvg(n, max) {
+  const r = 14, c = 2 * Math.PI * r;
+  const done = Math.min(n, max) / max;
+  const dash = (done * c).toFixed(1);
+  return `<svg class="ring" width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="18" r="${r}" fill="none" stroke="#000" stroke-width="2" opacity=".2"/><circle cx="18" cy="18" r="${r}" fill="none" stroke="#000" stroke-width="3" stroke-dasharray="${dash} ${c}" stroke-linecap="butt" transform="rotate(-90 18 18)"/></svg>`;
+}
+function bumpTask(id) {
+  const tdef = DAILY.find(x => x.id === id);
+  if (!tdef) return;
+  const n = state.tasks[id] || 0;
+  if (n >= tdef.max) return;
+  state.tasks[id] = n + 1;
+  state.xp = (state.xp || 0) + 1;
+  localStorage.setItem("mapidex_tasks_v3", JSON.stringify(state.tasks));
+  localStorage.setItem("mapidex_xp_v3", JSON.stringify(state.xp));
+}
+function clearCountdown() {
+  if (state.countdown && state.countdown.timer) clearTimeout(state.countdown.timer);
+  state.countdown = null;
+}
+function startCountdown(action, taskId) {
+  clearCountdown();
+  state.tray = false;
+  state.countdown = { n: 3, action, taskId: taskId || null, timer: null };
+  render();
+  stepCountdown();
+}
+function stepCountdown() {
+  if (!state.countdown) return;
+  if (state.countdown.n <= 0) {
+    const { action, taskId } = state.countdown;
+    clearCountdown();
+    if (action === "Capture") return capture();
+    if (action === "Ask") { state.layer = 0; return go("ask", { keepStop: true }); }
+    if (action === "TaskBump") { bumpTask(taskId); return render(); }
+    return render();
+  }
+  state.countdown.timer = setTimeout(() => {
+    if (!state.countdown) return;
+    state.countdown.n -= 1;
+    render();
+    stepCountdown();
+  }, 700);
+}
+function go(screen, opts) {
+  opts = opts || {};
+  clearCountdown();
+  state.screen = screen;
+  state.tray = false;
+  if (!opts.keepStop) state.stop = 0;
+  if (screen === "loading") {
+    state.loadProg = 0;
+    render();
+    const started = performance.now();
+    const dur = 1500;
+    function tickLoad(now) {
+      if (state.screen !== "loading") return;
+      const u = Math.min(1, (now - started) / dur);
+      state.loadProg = u;
+      render();
+      if (u < 1) requestAnimationFrame(tickLoad);
+      else go("path");
+    }
+    requestAnimationFrame(tickLoad);
+    return;
+  }
+  render();
+}
+function tick(d) {
+  if (state.countdown) return;
+  if (state.screen === "start") state.cat = (state.cat + d + 4) % 4;
+  else if (state.screen === "path" && state.tray) state.trayIdx = (state.trayIdx + d + TRAY.length) % TRAY.length;
+  else if (state.screen === "path") state.stop = Math.max(0, Math.min(stops().length - 1, state.stop + d));
+  else if (state.screen === "ask") state.layer = Math.max(0, Math.min(askLayers().length - 1, state.layer + d));
+  else if (state.screen === "tasks") state.taskIdx = (state.taskIdx + d + DAILY.length) % DAILY.length;
+  render();
+}
+function openTray() { state.tray = true; state.trayIdx = 0; render(); }
+function confirmTray() {
+  const act = TRAY[state.trayIdx];
+  if (act === "Tasks") { state.taskIdx = 0; return go("tasks", { keepStop: true }); }
+  if (act === "Ask") return startCountdown("Ask");
+  state.returnTo = "path";
+  return startCountdown("Capture");
+}
+function capture() {
+  state.saved = [{
+    id: "gg-bridge", title: ASK.title, category: CATEGORIES[state.cat],
+    at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  }, ...state.saved.filter(x => x.id !== "gg-bridge")];
+  localStorage.setItem("mapidex_saved_v3", JSON.stringify(state.saved));
+  go("saved");
+}
+function pressA() {
+  if (state.countdown) return;
+  if (state.screen === "splash") return go("start");
+  if (state.screen === "start") return go("loading");
+  if (state.screen === "path") { if (state.tray) return confirmTray(); return openTray(); }
+  if (state.screen === "ask") { state.returnTo = "ask"; return startCountdown("Capture"); }
+  if (state.screen === "tasks") {
+    const tdef = DAILY[state.taskIdx];
+    if ((state.tasks[tdef.id] || 0) >= tdef.max) return;
+    return startCountdown("TaskBump", tdef.id);
+  }
+}
+function pressB() {
+  if (state.countdown) {
+    const n = state.countdown.n;
+    const label = n > 0 ? String(n) : "go";
+    const taskDef = DAILY.find(x => x.id === state.countdown.taskId);
+    const act = state.countdown.action;
+    const isCatch = act === "Capture" || act === "Ask";
+    if (isCatch) {
+      html = `<div class="pad" style="padding:0;position:relative"><div class="cd-logo-wrap"><div class="cd-num">${label}</div><div class="breath-ink">MaPeDex</div></div></div>`;
+      note("Catch ritual: breathing logo, number through cutout.");
+    } else {
+      const actLabel = act === "TaskBump" && taskDef ? taskDef.label : act;
+      html = `<div class="pad"><div class="countdown"><div class="n">${label}</div><div class="hint">${actLabel} - look up</div><div class="hint" style="margin-top:16px">B cancel</div></div></div>`;
+      note("Countdown. B cancels.");
+    }
+    el.innerHTML = html; return;
+  }
+
+  if (state.screen === "splash") {
+    html = `<div class="pad"><div class="center"><div><div class="logo-word">${logoSpans(1)}</div><p class="t10" style="margin-top:8px">commute / catch</p></div></div><div class="row t10"><span></span><span>A start</span></div></div>`;
+  }
+  if (state.screen === "start") {
+    html = `<div class="pad"><div class="row"><span class="t10">pick a vibe</span><span class="badge">at work</span></div><ul class="list">${CATEGORIES.map((c,i)=>`<li class="${i===state.cat?"on":""}"><span>${c}</span><span>${i===state.cat?"<":""}</span></li>`).join("")}</ul><div class="grow"></div><div class="actions"><span>B Saved</span><span class="heavy">A Go</span></div></div>`;
+  }
+  if (state.screen === "loading") {
+    html = `<div class="pad"><div class="center"><div class="logo-word logo-sparse">${logoSpans(state.loadProg || 0)}</div></div></div>`;
+    note("Logo density 0→1 (silent loader).");
+  }
+  if (state.screen === "path") {
+    const all = stops();
+    const s = all[Math.min(state.stop, all.length - 1)];
+    const cat = CATEGORIES[state.cat];
+    const time = stripFoot(FEED.gist);
+    const place = detourPlace();
+    const viaIndex = all.findIndex(x => x.kind === "via");
+    let left = "";
+    if (s.kind === "via") {
+      left = `<div class="arrow-wrap"><div class="arrow-big" style="font-size:28px;line-height:1">▲</div></div><div class="onto-label">via</div><div class="street-line">${s.text}</div><div class="t10" style="margin-top:8px;text-align:left;width:100%">detour on walk</div>`;
+    } else {
+      const f = formatTurn(s.text);
+      left = `<div class="arrow-wrap"><div class="arrow-big">${arrowBig(f.kind)}</div></div><div class="onto-label">${f.onto}</div><div class="street-line">${f.street}</div><div class="leg-bar"><span>${f.inDist}</span><div class="track"><div class="fill"></div></div></div>`;
+    }
+    html = `<div class="pad" style="padding:8px">
+      <div class="path-band">
+        <div class="path-left"><div class="gist-row"><span>${cat}</span><span>${time}</span></div>${left}<div class="grow"></div></div>
+        ${pathMapSvg(state.stop, all.length, viaIndex >= 0 ? viaIndex : null)}
+      </div>
+      <div class="path-actions"><span>B Back</span><span class="heavy">A actions</span></div>
+      ${state.tray ? `<div class="tray">${TRAY.map((n,i)=>`<div class="ti ${i===state.trayIdx?"on":""}"><span>${n}</span><span>${i===state.trayIdx?"<":""}</span></div>`).join("")}</div>` : ""}
+    </div>`;
+    note("Scaled zigzag from turns · ▲ via · start bottom · B left / A right.");
+  }
+  if (state.screen === "ask") {
+    const layers = askLayers();
+    const layer = layers[Math.min(state.layer, layers.length - 1)];
+    html = `<div class="pad" style="padding:8px;padding-bottom:4px">
+      <div class="ask-split">
+        <div class="card-img">capture</div>
+        <div class="ask-info">
+          <div class="t14">${ASK.title}</div>
+          <div class="t10" style="margin-top:6px">${state.layer+1}/${layers.length}  ${layer.tag}</div>
+          <p class="layer-text">${layer.text}</p>
+          <div class="grow"></div>
+        </div>
+      </div>
+      <div class="actions"><span>B Back</span><span class="heavy">A Capture</span></div>
+    </div>`;
+    note("Ask: image left / info right.");
+  }
+  if (state.screen === "tasks") {
+    html = `<div class="pad">
+      <div class="row"><span class="t14">Daily tasks</span><span class="t10">today</span></div>
+      <div style="margin-top:4px">${DAILY.map((tdef,i)=>{
+        const n = state.tasks[tdef.id] || 0;
+        return `<div class="task-row ${i===state.taskIdx?"on":""}">${ringSvg(n,tdef.max)}<div><div>${tdef.label}</div><div class="task-meta">${n}/${tdef.max} done</div></div><div class="t10">${n>=tdef.max?"ok":""}</div></div>`;
+      }).join("")}</div>
+      <div class="grow"></div>${levelBar()}
+      <div class="actions" style="margin-top:4px"><span>B Back</span><span class="heavy">A +1</span></div>
+    </div>`;
+    note("Tasks. Lv + bar only.");
+  }
+  if (state.screen === "saved") {
+    html = `<div class="pad"><div class="t14">Saved</div>${state.saved.length===0?`<p class="empty">nothing caught yet</p>`:`<ul class="saved" style="margin-top:8px">${state.saved.map(s=>`<li>${s.title}<br/><span class="t10">${s.category} / ${s.at}</span></li>`).join("")}</ul>`}<div class="grow"></div><div class="actions"><span>B Back</span><span class="muted-act">A -</span></div></div>`;
+    note("Saved. B -> " + state.returnTo);
+  }
+  el.innerHTML = html;
+}
+
+document.getElementById("btnA").onclick = pressA;
+document.getElementById("btnB").onclick = pressB;
+document.getElementById("doA").onclick = pressA;
+document.getElementById("doB").onclick = pressB;
+document.getElementById("crank").onclick = () => tick(1);
+document.getElementById("tickPrev").onclick = () => tick(-1);
+document.getElementById("tickNext").onclick = () => tick(1);
+const lcd = document.getElementById("lcd");
+lcd.addEventListener("wheel", e => { e.preventDefault(); tick(e.deltaY > 0 ? 1 : -1); }, { passive: false });
+window.addEventListener("keydown", e => {
+  if (["ArrowDown","ArrowRight"].includes(e.key)) { e.preventDefault(); tick(1); }
+  if (["ArrowUp","ArrowLeft"].includes(e.key)) { e.preventDefault(); tick(-1); }
+  if (["Enter","a","A","s","S"].includes(e.key)) { e.preventDefault(); pressA(); }
+  if (["Escape","b","B"].includes(e.key)) { e.preventDefault(); pressB(); }
+});
+
+async function boot() {
+  try {
+    const res = await fetch("last_feed.json", { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      const r = data.route || {};
+      FEED.gist = ascii(stripFoot(r.summary || FEED.gist));
+      FEED.summary = ascii(((r.from || "") + " -> " + (r.to || "")).trim() || FEED.summary);
+      FEED.turns = (r.instructions || []).map(ascii);
+      FEED.placesByCat = {};
+      for (const k of CATEGORIES) FEED.placesByCat[k] = ((data.categories || {})[k] || []).map(p => ascii(p.name));
+      FEED.places = (data.selected_places || []).map(p => ascii(p.name));
+      if (data.selected && CATEGORIES.includes(data.selected)) state.cat = CATEGORIES.indexOf(data.selected);
+    }
+  } catch (_) {}
+  go("splash");
+  lcd.focus();
+}
+boot();
+
+</script>
+</body>
+</html>

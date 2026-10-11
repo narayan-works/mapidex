@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mapidex - demo (web mirror)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #3a3a3a; color: #ddd;
+    font-family: ui-monospace, Menlo, monospace;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; padding: 20px 12px;
+  }
+  .pd {
+    background: #ffc83d; border-radius: 28px; padding: 22px 22px 18px;
+    box-shadow: 0 12px 0 #c99200, 0 18px 40px rgba(0,0,0,.45);
+    width: 460px; user-select: none;
+  }
+  .pd-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px; }
+  .pd-logo { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: #5a3a00; text-transform: uppercase; }
+  .lcd-bezel { background: #1a1a1a; border-radius: 6px; padding: 8px; width: 416px; height: 256px; }
+  #lcd { width: 400px; height: 240px; display: block; image-rendering: pixelated; background: #fff; cursor: ns-resize; }
+  .pd-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 0 8px; }
+  .dpad { display: grid; grid-template-columns: 22px 22px 22px; grid-template-rows: 22px 22px 22px; gap: 1px; }
+  .dpad button { background: #2a2a2a; color: #eee; border: 0; font: inherit; font-size: 10px; cursor: pointer; border-radius: 3px; }
+  .dpad .c { background: #2a2a2a; border-radius: 0; }
+  .crank { display: flex; gap: 4px; align-items: center; color: #5a3a00; font-size: 9px; font-weight: 700; }
+  .crank button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #8a6a10; background: #ffe08a; color: #5a3a00; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .ab { display: flex; gap: 12px; }
+  .ab button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: #2a2a2a; color: #eee; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .ab button:active, .dpad button:active, .crank button:active { filter: brightness(1.6); }
+  .ext { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .ext button { font: inherit; font-size: 11px; background: #222; color: #eee; border: 1px solid #555; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  .note { font-size: 11px; color: #999; text-align: center; max-width: 470px; line-height: 1.45; }
+  .note b { color: #ddd; }
+</style>
+</head>
+<body>
+<div class="pd">
+  <div class="pd-top"><span class="pd-logo">Playdate - Mapidex demo</span><span class="pd-logo" id="snd">sound off</span></div>
+  <div class="lcd-bezel"><canvas id="lcd" width="400" height="240"></canvas></div>
+  <div class="pd-bottom">
+    <div class="dpad">
+      <span></span><button data-k="up">^</button><span></span>
+      <button data-k="left">&lt;</button><span class="c"></span><button data-k="right">&gt;</button>
+      <span></span><button data-k="down">v</button><span></span>
+    </div>
+    <div class="crank"><button data-k="crankDown">-</button>crank<button data-k="crankUp">+</button></div>
+    <div class="ab"><button data-k="b">B</button><button data-k="a">A</button></div>
+  </div>
+</div>
+<div class="ext">
+  <button id="btnMute">mute (M)</button>
+  <button id="btnReset">reset saves</button>
+  <button id="btnFeed">reload last_feed.json</button>
+</div>
+<div class="note">
+  <b>Keys:</b> arrows = d-pad &middot; X / Enter = A &middot; Z / Backspace = B &middot; [ ] or mouse wheel on screen = crank &middot; M = mute
+</div>
+<div class="note" id="feedNote">feed: baked</div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Mapidex - demo web mirror. Mirrors Source/main.lua screens. 400x240, 1-bit.
+// SFX are original synthesized blips (sfx/*.wav), no Nintendo assets.
+// ---------------------------------------------------------------------------
+
+const BAKED_FEED = {"office":"Founders Inc","home":"home","officeLL":{"lat":37.8067218,"lng":-122.4318093},"homeLL":{"lat":37.7989871,"lng":-122.4349331},"default":"play","categories":{"relax":{"place":{"name":"Reveille Coffee","lat":37.8005,"lng":-122.4365},"summary":"foot - 0.9 mi - 4 min","detourIndex":7,"viaStep":8,"path":{"w":180,"h":100,"pts":[[113,86],[113,82],[113,77],[94,77],[94,64],[67,64],[67,30],[67,14],[74,14]]},"instructions":["Head out - 38 ft","Turn Left - 5 ft","Turn Right - 60 ft","Turn Right - 217 ft","Turn Left onto Buchanan Street - 147 ft","Turn Right onto North Point Street - 293 ft","End Of Road Left onto Fillmore Street - 363 ft","Via Reveille Coffee","Head out on Fillmore Street - 177 ft","Turn Left onto Greenwich Street - 83 ft","Arrive - home"]},"play":{"place":{"name":"Marina Green","lat":37.8066027,"lng":-122.4391166},"summary":"foot - 1.5 mi - 8 min","detourIndex":8,"viaStep":9,"path":{"w":180,"h":100,"pts":[[158,59],[158,55],[158,48],[135,48],[135,45],[107,45],[107,48],[107,86],[68,86],[68,23],[22,23],[22,14]]},"instructions":["Head out - 38 ft","Turn Left - 5 ft","Turn Right - 60 ft","Turn Right - 217 ft","Turn Left - 35 ft","Turn Right onto Marina Boulevard - 260 ft","Turn Right onto Marina Green Drive - 34 ft","Continue - 355 ft","Via Marina Green","Head out - 367 ft","Turn Left onto Cervantes Boulevard - 592 ft","Turn Right onto Fillmore Street - 434 ft","Turn Left onto Greenwich Street - 83 ft","Arrive - home"]},"social":{"place":{"name":"Mel's Drive-in","lat":37.7995505,"lng":-122.4370481},"summary":"foot - 1.1 mi - 5 min","detourIndex":10,"viaStep":11,"path":{"w":180,"h":100,"pts":[[126,86],[126,82],[126,76],[105,76],[105,62],[77,62],[77,20],[63,20],[58,20],[58,22],[58,21],[54,21],[54,14],[76,14]]},"instructions":["Head out - 38 ft","Turn Left - 5 ft","Turn Right - 60 ft","Turn Right - 217 ft","Turn Left onto Buchanan Street - 147 ft","Turn Right onto North Point Street - 293 ft","End Of Road Left onto Fillmore Street - 435 ft","Turn Right onto Lombard Street - 147 ft","Continue - 54 ft","Turn Right - 14 ft","Via Mel's Drive-in","Head out - 3 ft","Turn Right - 44 ft","Turn Left onto Steiner Street - 78 ft","Turn Left onto Greenwich Street - 230 ft","Arrive - home"]},"essentials":{"place":{"name":"Le Marais Bakery","lat":37.8007246,"lng":-122.4376692},"summary":"foot - 1.0 mi - 5 min","detourIndex":10,"viaStep":10,"path":{"w":180,"h":100,"pts":[[122,86],[122,82],[123,82],[123,75],[98,75],[98,58],[65,58],[65,26],[60,26],[60,38],[57,38],[57,14],[84,14]]},"instructions":["Head out - 38 ft","Turn Left - 5 ft","Turn Right - 60 ft","Turn Right - 217 ft","Turn Left onto Buchanan Street - 147 ft","Turn Right onto North Point Street - 293 ft","End Of Road Left onto Fillmore Street - 287 ft","Turn Slight Right - 42 ft","Turn Right onto Chestnut Street - 106 ft","Via Le Marais Bakery","Head out on Chestnut Street - 23 ft","Turn Left onto Steiner Street - 209 ft","Turn Left onto Greenwich Street - 230 ft","Arrive - home"]},"none":{"place":{"name":"no detour","lat":37.7989871,"lng":-122.4349331},"summary":"foot - 0.9 mi - 4 min","detourIndex":1,"viaStep":999,"path":{"w":180,"h":100,"pts":[[113,86],[113,82],[113,77],[94,77],[94,64],[67,64],[67,14],[74,14]]},"instructions":["Head out - 38 ft","Turn Left - 5 ft","Turn Right - 60 ft","Turn Right - 217 ft","Turn Left onto Buchanan Street - 147 ft","Turn Right onto North Point Street - 293 ft","End Of Road Left onto Fillmore Street - 540 ft","Turn Left onto Greenwich Street - 83 ft","Arrive - home"]}}};
+const IMG_SRC = {
+  splash: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAADwAQAAAAAGRw+PAAAFOklEQVR4nO1Z3WrkNhg9IwkcerHppaEB62IpfYS5CIzLPkBfqPQd+ja9CShsLvIQLWjYhfoyd+uh1qocSfZ4MpNkNXa2XfAheGzLx9+n70+fnJVHLkQ2AwslFyKbgYWSC5HNwELJhchmYKHkQmQzsFByIbIZWCi5ENkMLJRciGwGFkouRDYDC+Wbs9jdfFJWPntI5EsRT444wK1W6gspq1UNdGWtAKfnUAz+CB0A6b29Ljkuj8YxvmgrHg2f3HjT8X3t8TvFNMU6UEoLFBaFlz5cmmoGKWJ0Hn1wj01btZ1TCJNaN88o1gIFtSuCWdoq6tQV8yrW4BpAh5YX5ieNmieyA3aHIeAHmMoX3tvoOwtvg8W84UU1l2K3tQZjJaKUSNqEn+1INTFBypaTpSdcvHa7fqQehg8pMS/cyK0X0gKuBuO5GO5jkmJ3KVzCSyOu0ITKZOkKYHtxSNnVkh4M2tXASktgS7VcelVr9S699HzFGlzLJAE7OKoEaLopWGoXC46aKMUWJqYHFO73LhhQK0pUYwqf0kBJ6wCSkcMQRgeLJlixKXwbrTktX8qgWYd1vLyWvcj9cUyJ86Cy9zKeSzN49faC7izR6BkUU5ykY+1mgKohGF20oIY1M0iRPHRFS8VVlyaiaZCEd4eUeF+iWVNBA+it7rOnatHAmBQvmL7wdTpOsQRsEyU7yWiKEXGKciNj6OrG1GWqxirEtBqyTyAbIv4MZUrtmDyc/1W6R9uVfCI5HzOs+2WYQJHivtdAOZS98/GIkmSv8QGNia5rzK0eexITFHO9GGtT3ZCuv1cHlwyVVBy9pOEDjmEW3/HBlWjoLTVZsX1ZjXHR0XbDTU3b9bGNM6SoxzeiQRvAbt/yWAHN3yvWJv2ElOQuDtv3pBoF6eja3pOYo1EsVarkeEeRTAaaO3UBBxTeaVDWxRo3I9PxBWVItqH4CWRD7E8/4k/+9LOMkukMbR3M3rbibCnqYAXn0hpn+4Nlda6NHJUzsX+sHC1FkvnF2OSFk3RTMgom+8VBheRlKW9oD6IDroKzTlFs0oxqmB1/TdBOWjJ0PUMk26BLXPADVvFnMFRaejF1+jvUYeU+KJ8N3dWVaSkbUYaYu4Fj3oYkDkqHEGYJUb3OAhOXVwvoj2HelLBGjS07elgNO+iMfh9TcatT+WCWqiu8iR0JVfYdvK3YMAfMkMhX4SiBTfKIAlaqgN07TEyQ0sTDvr3xo2aoZBQMQeYjUPhOmsLzQVtwvxC3ftwt0CyQaXPnp0zf9N422IzHi2AQ7ZhLyQIjKV34q8O+MrrEAG04sjeLCxOmBsw9NHYpSyI2wRobJdEpQKYSNEmKqwEXtgLlfrMU0IKLi4WpDynd3Wj1G7Y7cchp+x5NXP8wSTFXQ1MMIybqN6Bh1pguNSvoKaF28eTEx4q+GUmdwDS/FOEYtruHstjRMmZSlE+T0kIxyoOIUbeRahqDzDzSoODXkP68L6YBFQmq7+gwSbF2f7MYncchHeZeHyRye/S9YQwbU11OrmPtc09VjI3QkWPS9IsXnxz2JuKLX05fvv53S4W/8qWklvZVFZPzVMuXcEbTq/MpyKecsU1QSbX//EP3DBSZT+l9KTDn5/QjbKtsCpfl11cs4X/nyh4C2RALJRMil4CFkg2xUDIhcglYKN+Ykb//KlLMMxx/Eu0vl/j16L+uEU9QHt5IrC9Pj4nTsj/99vD77o+8udRvvhM6i3LxzOzF6dut+YzPB9u+F7uL7Y//XFx+esiRUv4soJ6IgNXSw2Ti6yTyv2L31Fxv1cleAAAAAElFTkSuQmCC",
+  entry_vert: "data:image/png;base64,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",
+  entry: "data:image/png;base64,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",
+  preview: "data:image/png;base64,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",
+};
+const ASK = {
+  title: "Golden Gate Bridge",
+  image: "entry_vert",
+  layers: [
+    { tag: "location", text: "SF-Marin / Golden Gate Strait" },
+    { tag: "fact", text: "1937 Art Deco suspension bridge" },
+    { tag: "fact", text: "Designed by Joseph Strauss" },
+    { tag: "hours", text: "Open 24h / sidewalk dawn-dusk" },
+  ],
+};
+
+const W = 400, H = 240;
+const cv = document.getElementById("lcd");
+const g = cv.getContext("2d", { willReadFrequently: true });
+g.imageSmoothingEnabled = false;
+
+const FONT_FAMILY = 'ui-monospace, Menlo, Monaco, "Courier New", monospace';
+const F_SMALL = "bold 11px " + FONT_FAMILY;
+const F_BODY = "bold 14px " + FONT_FAMILY;
+const F_TITLE = "bold 40px " + FONT_FAMILY;
+
+// ---------------------------------------------------------------- audio ---
+// ask.wav  = Narayan's OPENING sound (Downloads/ask.wav) — plays on splash→menu, replaces old fanfare.
+// task.wav = Narayan's DAILY TASKS sound (Downloads/task.wav) — plays when Daily tasks opens from menu/tray.
+const SFX_NAMES = ["confirm", "tick", "whoosh", "chirp", "fanfare", "deny", "ask", "task"];
+const LONG_SFX = { ask: 0.8, task: 0.8 }; // long tracks: one at a time, gain per track
+let longSrc = null; // currently playing long track (Web Audio source or <audio>)
+function stopLong() { if (longSrc) { try { longSrc.stop ? longSrc.stop() : longSrc.pause(); } catch (e) {} longSrc = null; } }
+let actx = null, muted = false, audioReady = false;
+const sfxBuf = {};
+const sfxEl = {};
+SFX_NAMES.forEach(n => { const a = new Audio("sfx/" + n + ".wav"); a.preload = "auto"; sfxEl[n] = a; });
+
+function unlockAudio() {
+  if (audioReady) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    SFX_NAMES.forEach(n => {
+      fetch("sfx/" + n + ".wav").then(r => r.arrayBuffer())
+        .then(b => actx.decodeAudioData(b)).then(buf => { sfxBuf[n] = buf; })
+        .catch(() => {});
+    });
+  } catch (e) { actx = null; }
+  audioReady = true;
+  updateSndLabel();
+  if (!fanfareDone && (state === "home" || state === "splash")) { fanfareDone = true; setTimeout(() => sfx("ask"), 60); } // opening = ask.wav
+}
+function sfx(name) {
+  if (muted || !audioReady) return;
+  const buf = sfxBuf[name];
+  if (actx && buf) {
+    const src = actx.createBufferSource();
+    const gain = actx.createGain();
+    const isLong = name in LONG_SFX;
+    if (isLong) stopLong();
+    gain.gain.value = isLong ? LONG_SFX[name] : (name === "fanfare" ? 0.7 : 0.9);
+    src.buffer = buf; src.connect(gain); gain.connect(actx.destination); src.start();
+    if (isLong) longSrc = src;
+    return;
+  }
+  const el = sfxEl[name];
+  if (el) { try { if (name in LONG_SFX) stopLong(); const c = el.cloneNode(); c.play().catch(() => {}); if (name in LONG_SFX) longSrc = c; } catch (e) {} }
+}
+function updateSndLabel() {
+  document.getElementById("snd").textContent = muted ? "muted" : (audioReady ? "sound on" : "click for sound");
+}
+updateSndLabel();
+
+// --------------------------------------------------------------- images ---
+const IMG = {};
+let logoInk = null;      // black splash pixels only (transparent elsewhere)
+let ditherField = null;  // 25% bayer 8x8
+let loadOrder = null;    // 8x8 block reveal ranks
+function loadImages() {
+  return Promise.all(Object.keys(IMG_SRC).map(k => new Promise(res => {
+    const im = new Image(); im.onload = () => { IMG[k] = im; res(); }; im.onerror = () => res(); im.src = IMG_SRC[k];
+  })));
+}
+function prepDerived() {
+  const bayer = [
+    [0,32,8,40,2,34,10,42],[48,16,56,24,50,18,58,26],[12,44,4,36,14,46,6,38],[60,28,52,20,62,30,54,22],
+    [3,35,11,43,1,33,9,41],[51,19,59,27,49,17,57,25],[15,47,7,39,13,45,5,37],[63,31,55,23,61,29,53,21]];
+  ditherField = document.createElement("canvas"); ditherField.width = W; ditherField.height = H;
+  const dc = ditherField.getContext("2d"); const dd = dc.createImageData(W, H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const on = bayer[y & 7][x & 7] < 16; const p = (y * W + x) * 4;
+    const v = on ? 0 : 255; dd.data[p] = dd.data[p+1] = dd.data[p+2] = v; dd.data[p+3] = 255;
+  }
+  dc.putImageData(dd, 0, 0);
+  logoInk = document.createElement("canvas"); logoInk.width = W; logoInk.height = H;
+  const lc = logoInk.getContext("2d");
+  if (IMG.splash) {
+    lc.drawImage(IMG.splash, 0, 0);
+    const ld = lc.getImageData(0, 0, W, H);
+    for (let p = 0; p < ld.data.length; p += 4) {
+      const dark = ld.data[p] < 128;
+      ld.data[p] = ld.data[p+1] = ld.data[p+2] = 0; ld.data[p+3] = dark ? 255 : 0;
+    }
+    lc.putImageData(ld, 0, 0);
+  }
+  // seeded shuffle for chunky density reveal
+  let seed = 1234567;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const n = (W / 8) * (H / 8); loadOrder = [];
+  for (let i = 0; i < n; i++) loadOrder.push(i);
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = loadOrder[i]; loadOrder[i] = loadOrder[j]; loadOrder[j] = t; }
+}
+
+// ----------------------------------------------------------------- feed ---
+let Feed = JSON.parse(JSON.stringify(BAKED_FEED));
+let feedNote = "feed: baked (Source/feed.lua)";
+function ascii(s) {
+  return String(s == null ? "" : s)
+    .replace(/[\u00b7\u2022]/g, "-").replace(/[\u2013\u2014]/g, "-")
+    .replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"')
+    .normalize("NFD").replace(/[^\x20-\x7e]/g, "");
+}
+function asciiDeep(o) {
+  if (typeof o === "string") return ascii(o);
+  if (Array.isArray(o)) return o.map(asciiDeep);
+  if (o && typeof o === "object") { const r = {}; for (const k in o) r[k] = asciiDeep(o[k]); return r; }
+  return o;
+}
+function applyLastFeed(j) {
+  j = asciiDeep(j);
+  const notes = [];
+  // 1) future/live shape: categories[vibe] = { place, path, instructions, ... }
+  let perVibe = 0;
+  if (j.categories) for (const k in j.categories) {
+    const c = j.categories[k];
+    if (c && !Array.isArray(c) && Array.isArray(c.instructions)) { Feed.categories[k] = c; perVibe++; }
+  }
+  if (perVibe) notes.push(perVibe + " vibe routes");
+  // 2) single OSRM route (pipe/last_feed shape)
+  if (!perVibe && j.route && Array.isArray(j.route.instructions)) {
+    const instr = j.route.instructions.map(s => s.replace(/\s*-\s*destination$/i, " - home"));
+    const viaAt = instr.findIndex(s => /^via /i.test(s));
+    const target = viaAt >= 0 ? (j.selected || "play") : "none";
+    const base = Feed.categories[target] || {};
+    const sel = (j.selected_places && j.selected_places[0]) || base.place;
+    const route = {
+      place: viaAt >= 0 ? sel : { name: "no detour" },
+      summary: j.route.summary || base.summary || "",
+      instructions: instr,
+      viaStep: viaAt >= 0 ? viaAt + 1 : 999,
+      path: zigzagFromTurns(instr, viaAt),
+    };
+    route.detourIndex = route.path.detourIndex;
+    Feed.categories[target] = route;
+    notes.push("route -> " + (target === "none" ? "no detour" : target) + " (zigzag from turns)");
+  }
+  if (j.meta && j.meta.office && j.meta.office.label) { Feed.office = j.meta.office.label; notes.push("work"); }
+  if (j.meta && j.meta.home && j.meta.home.label) { Feed.homeLabel = j.meta.home.label; notes.push("home"); }
+  feedNote = "feed: baked + last_feed.json (" + (notes.join(", ") || "nothing usable") + ")";
+}
+function loadLastFeed() {
+  Feed = JSON.parse(JSON.stringify(BAKED_FEED));
+  feedNote = "feed: baked (Source/feed.lua) - no last_feed.json";
+  return fetch("last_feed.json", { cache: "no-store" })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { if (j) applyLastFeed(j); })
+    .catch(() => {})
+    .then(() => { document.getElementById("feedNote").textContent = feedNote; });
+}
+
+// distance text -> feet (for zigzag lengths)
+function feetOf(text) {
+  const mi = /(\d+\.?\d*)\s*mi/.exec(text); if (mi) return parseFloat(mi[1]) * 5280;
+  const ft = /(\d+\.?\d*)\s*ft/.exec(text); if (ft) return parseFloat(ft[1]);
+  return 0;
+}
+// abstract bent walk from turn list: start bottom heading up, L/R rotate 90deg
+function zigzagFromTurns(instr, viaAt) {
+  let x = 0, y = 0, dir = 0; // 0 up, 1 right, 2 down, 3 left
+  const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+  const pts = [[0, 0]]; let detourIndex = 1;
+  instr.forEach((s, i) => {
+    const k = turnKind(s);
+    if (k === "left") dir = (dir + 3) % 4;
+    else if (k === "right") dir = (dir + 1) % 4;
+    if (k === "via") { detourIndex = pts.length; return; }
+    if (k === "arrive") return;
+    const len = Math.max(30, Math.sqrt(feetOf(s)) * 6);
+    x += DX[dir] * len; y += DY[dir] * len; pts.push([Math.round(x), Math.round(y)]);
+  });
+  if (viaAt < 0) detourIndex = 1;
+  return { pts, detourIndex };
+}
+
+// --------------------------------------------------------------- state ---
+const HOME_ITEMS = ["Start", "Detour log", "Captures", "Daily tasks"];
+const CAT_KEYS = ["relax", "play", "social", "essentials", "none"];
+const TRAY = ["Ask", "Tasks", "Capture"];
+const DAILY = [
+  { id: "leaves", label: "capture leaves", max: 5 },
+  { id: "doors", label: "capture doors", max: 5 },
+  { id: "signs", label: "capture signs", max: 5 },
+];
+const XP_PER_LEVEL = 15;
+const LEVEL_NAMES = ["Sprout", "Walker", "Scout", "Catcher", "Ranger", "Dex Keeper"];
+const SPLASH_MS = 1400, LOAD_MS = 1500;
+
+let state = "splash", stateAt = performance.now();
+let fanfareDone = false;
+let homeIdx = 0, catIndex = 0, selected = "relax";
+let stepIndex = 0, askLayer = 0, trayOpen = false, trayIdx = 0, taskIdx = 0;
+let capFolder = "free", capTileIdx = 0, capViewIdx = 0, logScroll = 0, tasksFromHome = false;
+let countN = 0, countAction = null, countTaskId = null, countFromAsk = false, countTimer = null;
+let saved = [], detourLog = [], tasks = { leaves: 0, doors: 0, signs: 0 }, xpTotal = 0;
+
+function seed() {
+  const gg = "Golden Gate Bridge", loc = "SF waterfront";
+  saved = [
+    { kind: "free", label: gg, location: loc, when: "Oct 10 4:12p", image: "entry_vert" },
+    { kind: "free", label: gg, location: loc, when: "Oct 10 3:40p", image: "entry" },
+    { kind: "free", label: gg, location: loc, when: "Oct 9 2:10p", image: "preview" },
+    { kind: "free", label: gg, location: loc, when: "Oct 8 11:05a", image: "entry_vert" },
+    { kind: "task", label: gg, task: "capture leaves", location: loc, when: "Oct 10 5:01p", image: "entry_vert" },
+    { kind: "task", label: gg, task: "capture doors", location: loc, when: "Oct 9 1:20p", image: "entry" },
+    { kind: "task", label: gg, task: "capture signs", location: loc, when: "Oct 9 4:00p", image: "preview" },
+    { kind: "task", label: gg, task: "capture leaves", location: loc, when: "Oct 8 9:30a", image: "entry" },
+  ];
+  detourLog = [
+    { vibe: "play", place: "Marina Green", when: "Oct 10", time: "5:12p" },
+    { vibe: "social", place: "Mel's Drive-in", when: "Oct 9", time: "6:40p" },
+    { vibe: "relax", place: "Reveille Coffee", when: "Oct 9", time: "8:15a" },
+    { vibe: "essentials", place: "Le Marais Bakery", when: "Oct 8", time: "7:40p" },
+    { vibe: "none", place: "straight home", when: "Oct 8", time: "8:05a" },
+    { vibe: "play", place: "Marina Green", when: "Oct 7", time: "6:00p" },
+  ];
+  tasks = { leaves: 0, doors: 0, signs: 0 }; xpTotal = 0;
+}
+const STORE = "mapidex-web-v2";
+function persist() { try { localStorage.setItem(STORE, JSON.stringify({ saved, detourLog, tasks, xpTotal })); } catch (e) {} }
+function restore() {
+  seed();
+  try {
+    const d = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (d) { saved = d.saved || saved; detourLog = d.detourLog || detourLog; tasks = d.tasks || tasks; xpTotal = d.xpTotal || 0; }
+  } catch (e) {}
+}
+function go(s) { state = s; stateAt = performance.now(); }
+
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function nowDate() { const d = new Date(); return MON[d.getMonth()] + " " + d.getDate(); }
+function nowTime() {
+  const d = new Date(); let h = d.getHours(); const m = d.getMinutes(); const ap = h < 12 ? "a" : "p";
+  h = h % 12 || 12; return h + ":" + String(m).padStart(2, "0") + ap;
+}
+
+// --------------------------------------------------------- route helpers ---
+const route = () => Feed.categories[selected] || {};
+const instructions = () => route().instructions || [];
+const vibeLabel = k => k === "none" ? "no detour" : k;
+const capturesOf = kind => saved.filter(c => c.kind === kind);
+function pathGist() { return String(route().summary || "").replace(/^foot\s*-?\s*/i, ""); }
+function turnKind(t) {
+  const s = String(t || "").toLowerCase();
+  if (/^via /.test(s)) return "via";
+  if (s.includes("left")) return "left";
+  if (s.includes("right")) return "right";
+  if (s.includes("arrive") || s.includes("destination") || s.includes("home")) return "arrive";
+  return "straight";
+}
+function turnPrep(t) {
+  const s = String(t || "").toLowerCase();
+  if (s.includes("onto")) return "onto";
+  if (s.includes("arrive") || s.includes("destination")) return "to";
+  return "towards";
+}
+function turnStreet(t) {
+  const m = /[Oo]nto\s+([^-]+)/.exec(t || "") || /[Tt]owards?\s+([^-]+)/.exec(t || "") || /\son\s+([A-Z][^-]+)/.exec(t || "");
+  return m ? m[1].trim() : null;
+}
+function turnLabel(t, idx) {
+  const st = turnStreet(t); if (st) return st;
+  const ins = instructions();
+  for (let i = idx + 1; i < ins.length; i++) { if (turnKind(ins[i]) === "via") break; const n = turnStreet(ins[i]); if (n) return n; }
+  const s = String(t || "").toLowerCase();
+  if (s.includes("head")) return "the path";
+  return "next corner";
+}
+function turnDist(t) {
+  const m = /(\d+\.?\d*\s*ft)/.exec(t || "") || /(\d+\.?\d*\s*mi)/.exec(t || "");
+  return m ? m[1] : "";
+}
+function pathProgress() {
+  const n = instructions().length, pts = (route().path && route().path.pts) || [];
+  const nPts = pts.length || 2, di = route().detourIndex || 1, viaS = route().viaStep || 1;
+  const turnIdx = stepIndex + 1;
+  if (n <= 1 || nPts <= 1) return 0;
+  if (viaS >= n || selected === "none") return (turnIdx - 1) / (n - 1);
+  let cut;
+  if (turnIdx <= viaS) cut = 1 + (viaS > 1 ? (turnIdx - 1) / (viaS - 1) : 0) * (di - 1);
+  else cut = di + (n > viaS ? (turnIdx - viaS) / (n - viaS) : 0) * (nPts - di);
+  return (cut - 1) / (nPts - 1);
+}
+
+// --------------------------------------------------------- draw helpers ---
+const BLACK = "#000", WHITE = "#fff";
+function clear() { g.fillStyle = WHITE; g.fillRect(0, 0, W, H); }
+function rect(x, y, w, h, c) { g.fillStyle = c || BLACK; g.fillRect(x, y, w, h); }
+function frame(x, y, w, h, lw, c) { g.strokeStyle = c || BLACK; g.lineWidth = lw || 2; g.strokeRect(x + lw / 2, y + lw / 2, w - lw, h - lw); }
+function text(s, x, y, opt) {
+  opt = opt || {};
+  g.font = opt.font || F_BODY; g.fillStyle = opt.color || BLACK;
+  g.textAlign = opt.align || "left"; g.textBaseline = "top";
+  g.fillText(ascii(s), x, y);
+}
+function fitText(s, w, font) {
+  g.font = font; s = ascii(s);
+  if (g.measureText(s).width <= w) return s;
+  while (s.length > 1 && g.measureText(s + "...").width > w) s = s.slice(0, -1);
+  return s + "...";
+}
+function wrapText(s, x, y, w, lineH, maxLines, font) {
+  g.font = font || F_BODY; const words = ascii(s).split(/\s+/); let line = "", lines = [];
+  for (const wd of words) {
+    const t = line ? line + " " + wd : wd;
+    if (g.measureText(t).width > w && line) { lines.push(line); line = wd; } else line = t;
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = fitText(lines[maxLines - 1] + " ...", w, g.font); }
+  lines.forEach((l, i) => text(l, x, y + i * lineH, { font: font || F_BODY }));
+}
+function footer(left, right) {
+  if (left) text(left, 8, 222, { font: F_SMALL });
+  if (right) text(right, 392, 222, { font: F_SMALL, align: "right" });
+}
+function line(x1, y1, x2, y2, lw) { g.strokeStyle = BLACK; g.lineWidth = lw; g.lineCap = "square"; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+function circle(cx, cy, r, lw, fill) {
+  g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2);
+  if (fill) { g.fillStyle = BLACK; g.fill(); } else { g.strokeStyle = BLACK; g.lineWidth = lw; g.stroke(); }
+}
+function triangle(cx, cy, r) { // equilateral, point up
+  const half = r * 0.866, down = r / 2;
+  g.fillStyle = BLACK; g.beginPath(); g.moveTo(cx, cy - r); g.lineTo(cx - half, cy + down); g.lineTo(cx + half, cy + down); g.closePath(); g.fill();
+}
+function drawImageFit(img, x, y, w, h, cover) {
+  if (!img) { rect(x, y, w, h, "#888"); text("GG", x + w / 2, y + h / 2 - 7, { align: "center", color: WHITE }); return; }
+  const s = cover ? Math.max(w / img.width, h / img.height) : Math.min(w / img.width, h / img.height);
+  const dw = Math.floor(img.width * s), dh = Math.floor(img.height * s);
+  g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+  g.drawImage(img, x + Math.floor((w - dw) / 2), y + Math.floor((h - dh) / 2), dw, dh);
+  g.restore();
+}
+function scrollbar(x, y, h, scroll, total, visible) {
+  if (total <= visible) return;
+  frame(x, y, 6, h, 1);
+  const th = Math.max(14, Math.floor(visible / total * h));
+  const maxS = Math.max(1, total - visible);
+  rect(x + 1, y + Math.floor(scroll / maxS * (h - th)), 4, th);
+}
+// force 1-bit: threshold whatever canvas antialiasing produced
+function oneBit() {
+  const d = g.getImageData(0, 0, W, H), a = d.data;
+  for (let p = 0; p < a.length; p += 4) {
+    const v = (a[p] * 3 + a[p + 1] * 6 + a[p + 2]) / 10 < 128 ? 0 : 255;
+    a[p] = a[p + 1] = a[p + 2] = v; a[p + 3] = 255;
+  }
+  g.putImageData(d, 0, 0);
+}
+
+// -------------------------------------------------------------- screens ---
+function drawSplash() { clear(); if (IMG.splash) g.drawImage(IMG.splash, 0, 0); else text("MaPeDex", 200, 100, { font: F_TITLE, align: "center" }); }
+
+function drawList(items, sel, top, rowH, barH) {
+  items.forEach((name, i) => {
+    const y = top + i * rowH;
+    if (i === sel) {
+      rect(8, y - 5, 384, barH);
+      text(name, 16, y, { color: WHITE }); text("<", 384, y, { color: WHITE, align: "right" });
+    } else text(name, 16, y);
+  });
+}
+function drawHome() {
+  clear();
+  text("Menu", 8, 8, { font: F_SMALL }); text("at work", 392, 8, { font: F_SMALL, align: "right" });
+  drawList(HOME_ITEMS, homeIdx, 40, 32, 26);
+  footer("B splash", "A open");
+}
+function drawVibe(now) {
+  clear();
+  text("detour", 8, 8, { font: F_SMALL }); text("at work", 392, 8, { font: F_SMALL, align: "right" });
+  drawList(CAT_KEYS.map(vibeLabel), catIndex, 36, 28, 25);
+  if (Math.floor(now / 500) % 2 === 0) text("select the vibe!", 200, 190, { font: F_SMALL, align: "center" });
+  footer("B Back", "A go");
+}
+function drawLoading(now) {
+  clear();
+  if (!IMG.splash) return;
+  const p = Math.min(1, (now - stateAt) / LOAD_MS);
+  const show = Math.floor(p * loadOrder.length), cols = W / 8;
+  for (let i = 0; i < show; i++) {
+    const b = loadOrder[i], bx = (b % cols) * 8, by = Math.floor(b / cols) * 8;
+    g.drawImage(IMG.splash, bx, by, 8, 8, bx, by, 8, 8);
+  }
+}
+function drawArrow(kind, x, y, r) {
+  const cx = x + r, cy = y + r;
+  circle(cx, cy, r, 3);
+  if (kind === "left") { line(cx + 12, cy + 22, cx + 12, cy - 4, 4); line(cx + 12, cy - 4, cx - 20, cy - 4, 4); line(cx - 20, cy - 4, cx - 8, cy - 16, 4); line(cx - 20, cy - 4, cx - 8, cy + 8, 4); }
+  else if (kind === "right") { line(cx - 12, cy + 22, cx - 12, cy - 4, 4); line(cx - 12, cy - 4, cx + 20, cy - 4, 4); line(cx + 20, cy - 4, cx + 8, cy - 16, 4); line(cx + 20, cy - 4, cx + 8, cy + 8, 4); }
+  else if (kind === "via") triangle(cx, cy + 4, 22);
+  else if (kind === "arrive") rect(cx - 11, cy - 11, 22, 22); // home = square (matches map)
+  else { line(cx, cy + 22, cx, cy - 20, 4); line(cx, cy - 20, cx - 12, cy - 6, 4); line(cx, cy - 20, cx + 12, cy - 6, 4); }
+}
+function drawPathMini(x, y, w, h, progress) {
+  frame(x, y, w, h, 2);
+  const path = route().path; if (!path || !path.pts || path.pts.length < 2) return;
+  let pts = path.pts.map(p => [p[0], p[1]]);
+  // start must sit at the bottom: rotate 180 (keeps L/R handedness) if needed
+  if (pts[0][1] < pts[pts.length - 1][1]) pts = pts.map(p => [-p[0], -p[1]]);
+  // scale bbox to fill map box (uniform, centered)
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const inset = 18, bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
+  const s = Math.min((w - inset * 2) / bw, (h - inset * 2) / bh);
+  const ox = x + (w - bw * s) / 2, oy = y + (h - bh * s) / 2;
+  const P = pts.map(p => [Math.round(ox + (p[0] - minX) * s), Math.round(oy + (p[1] - minY) * s)]);
+  const n = P.length; const di = Math.max(1, Math.min(n, route().detourIndex || 1));
+  const cut = Math.max(1, Math.min(n, Math.floor(1 + progress * (n - 1) + 0.5)));
+  for (let i = 0; i < n - 1; i++) line(P[i][0], P[i][1], P[i + 1][0], P[i + 1][1], i < cut - 1 ? 3 : 1);
+  const m = Math.min(w, h), rEnd = Math.max(3, Math.floor(m / 28)), rTri = Math.max(6, Math.floor(m / 14)), rYou = Math.max(3, Math.floor(m / 32));
+  circle(P[0][0], P[0][1], rEnd, 2);                           // work = ring
+  rect(P[n - 1][0] - rEnd, P[n - 1][1] - rEnd, rEnd * 2, rEnd * 2); // home = square
+  if (selected !== "none") triangle(P[di - 1][0], P[di - 1][1], rTri); // detour = equilateral
+  circle(P[cut - 1][0], P[cut - 1][1], rYou + 1, 0, true);      // you
+}
+function drawPath() {
+  clear();
+  const pad = 8, footerY = 220, mapX = 234, mapW = W - mapX - pad, mapY = pad, mapH = footerY - pad - 2;
+  const leftW = mapX - pad - 8, leftCX = pad + leftW / 2;
+  const ins = instructions(); const n = ins.length;
+  const cur = ins[stepIndex] || "";
+  // header: vibe left; place top-right only when there is a detour; gist under it
+  text(vibeLabel(selected), pad, pad, { font: F_SMALL });
+  if (selected !== "none" && route().place) text(fitText(route().place.name, leftW - 60, F_SMALL), mapX - pad, pad, { font: F_SMALL, align: "right" });
+  text(pathGist(), mapX - pad, pad + 14, { font: F_SMALL, align: "right" });
+
+  let kind = turnKind(cur), prep = turnPrep(cur), label = turnLabel(cur, stepIndex), dist = turnDist(cur);
+  if (kind === "via") { prep = "via"; label = (route().place && route().place.name) || "detour"; dist = ""; }
+  else if (kind === "arrive") { prep = "to"; label = "home"; dist = ""; }
+  const ar = 40; drawArrow(kind, leftCX - ar, 40, ar);
+  const ty = 40 + ar * 2 + 8;
+  text(prep, pad, ty, { font: F_SMALL });
+  wrapText(label, pad, ty + 15, leftW, 16, 2, F_BODY);
+  if (dist) {
+    const ftY = footerY - 26;
+    text("in " + dist, pad, ftY, { font: F_SMALL });
+    const barX = pad + 90, barW = leftW - 94, barY = ftY + 2;
+    frame(barX, barY, barW, 9, 2);
+    const fill = n > 0 ? Math.floor(stepIndex * (barW - 4) / n) : 0;
+    if (fill > 0) rect(barX + 2, barY + 2, fill, 5);
+  }
+  drawPathMini(mapX, mapY, mapW, mapH, pathProgress());
+  footer("B Back", "A actions");
+  if (trayOpen) {
+    const row = 26, top = 128, boxH = 12 + TRAY.length * row;
+    rect(8, top, 384, boxH);
+    TRAY.forEach((name, i) => text((i === trayIdx ? "> " : "  ") + name, 20, top + 9 + i * row, { color: WHITE }));
+  }
+}
+function drawAsk() {
+  clear();
+  const img = IMG[ASK.image], iw = img ? img.width : 160, ih = Math.min(200, img ? img.height : 200);
+  if (img) g.drawImage(img, 8, 8, iw, ih);
+  frame(8, 8, iw, ih, 1);
+  const rx = 8 + iw + 10, rw = W - rx - 8;
+  wrapText(ASK.title, rx, 8, rw, 17, 2, F_BODY);
+  const L = ASK.layers[askLayer];
+  text((askLayer + 1) + "/" + ASK.layers.length + "  " + L.tag, rx, 56, { font: F_SMALL });
+  wrapText(L.text, rx, 76, rw, 17, 5, F_BODY);
+  text("crank / < >", rx, 196, { font: F_SMALL });
+  footer("B Back", "A Capture");
+}
+function drawRing(x, y, n, max) {
+  circle(x, y, 12, 3);
+  if (n <= 0) return;
+  const a = Math.min(n, max) / max * Math.PI * 2;
+  g.strokeStyle = BLACK; g.lineWidth = 7; g.lineCap = "butt"; g.beginPath(); g.arc(x, y, 12, -Math.PI / 2, -Math.PI / 2 + a); g.stroke();
+}
+function levelInfo() { const lv = Math.floor(xpTotal / XP_PER_LEVEL) + 1; return [lv, xpTotal % XP_PER_LEVEL, LEVEL_NAMES[Math.min(LEVEL_NAMES.length, lv) - 1]]; }
+function drawTasks() {
+  clear();
+  text("Tasks", 8, 8, { font: F_SMALL }); text("at work", 392, 8, { font: F_SMALL, align: "right" });
+  DAILY.forEach((t, i) => {
+    const y = 30 + i * 46, n = tasks[t.id] || 0, on = i === taskIdx, c = on ? WHITE : BLACK;
+    drawRing(24, y + 21, n, t.max);
+    if (on) rect(48, y, 344, 42);
+    text(t.label, 60, y + 6, { color: c });
+    text(n + "/" + t.max + " done", 60, y + 25, { font: F_SMALL, color: c });
+    if (n >= t.max) text("ok", 378, y + 15, { font: F_SMALL, color: c, align: "right" });
+  });
+  const [lv, into, name] = levelInfo();
+  text("Lv " + lv + " " + name, 8, 174, { font: F_SMALL });
+  text(into + "/" + XP_PER_LEVEL + " xp", 392, 174, { font: F_SMALL, align: "right" });
+  frame(8, 190, 384, 14, 2);
+  const fill = Math.floor(into * 380 / XP_PER_LEVEL); if (fill > 0) rect(10, 192, fill, 10);
+  footer("B Back", "A +1");
+}
+function drawLog() {
+  clear();
+  text("Detour log", 8, 8, { font: F_SMALL }); text("at work", 392, 8, { font: F_SMALL, align: "right" });
+  const top = 30, bot = 212, rowH = 36, visible = Math.floor((bot - top) / rowH), total = detourLog.length;
+  logScroll = Math.max(0, Math.min(logScroll, Math.max(0, total - visible)));
+  if (!total) text("no walks yet", 200, 110, { font: F_SMALL, align: "center" });
+  for (let i = logScroll; i < Math.min(total, logScroll + visible); i++) {
+    const e = detourLog[i], y = top + (i - logScroll) * rowH;
+    text(fitText(e.place || "?", 370, F_BODY), 8, y);
+    text(e.vibe === "none" ? "none" : vibeLabel(e.vibe || ""), 8, y + 17, { font: F_SMALL });
+    text((e.when || "") + "  " + (e.time || ""), 380, y + 17, { font: F_SMALL, align: "right" });
+  }
+  scrollbar(388, top, bot - top - 4, logScroll, total, visible);
+  footer("B Back", total > visible ? "crank / ^ v" : "");
+}
+function drawFolders() {
+  clear();
+  text("Captures", 8, 8, { font: F_SMALL }); text("at work", 392, 8, { font: F_SMALL, align: "right" });
+  [["free", "Captures", 8], ["task", "Daily tasks", 204]].forEach(([k, title, x]) => {
+    const on = capFolder === k, c = on ? WHITE : BLACK;
+    if (on) rect(x, 32, 188, 160); else frame(x, 32, 188, 160, 2);
+    text(title, x + 12, 44, { color: c });
+    text(capturesOf(k).length + " items", x + 12, 174, { font: F_SMALL, color: c }); // count bottom-left
+  });
+  footer("B Back", "A open");
+}
+const GRID = { cols: 4, gap: 6, top: 28, left: 8, cell: 84 };
+function drawTiles() {
+  clear();
+  const list = capturesOf(capFolder), total = list.length;
+  text(capFolder === "task" ? "Task captures" : "Captures", 8, 8, { font: F_SMALL });
+  text(total + " tiles", 392, 8, { font: F_SMALL, align: "right" });
+  const { cols, gap, top, left, cell } = GRID, rowsVis = 2;
+  const selRow = Math.floor(capTileIdx / cols);
+  const maxTop = Math.max(0, Math.ceil(total / cols) - rowsVis);
+  const topRow = Math.min(maxTop, Math.max(0, selRow - rowsVis + 1));
+  for (let slot = 0; slot < cols * rowsVis; slot++) {
+    const i = topRow * cols + slot; if (i >= total) break;
+    const x = left + (slot % cols) * (cell + gap), y = top + Math.floor(slot / cols) * (cell + gap);
+    drawImageFit(IMG[list[i].image], x + 3, y + 3, cell - 6, cell - 6, false);
+    frame(x, y, cell, cell, 2);
+    if (i === capTileIdx) { frame(x - 3, y - 3, cell + 6, cell + 6, 2); frame(x + 2, y + 2, cell - 4, cell - 4, 1); }
+  }
+  if (!total) text("empty", 200, 110, { font: F_SMALL, align: "center" });
+  scrollbar(388, top, 2 * cell + gap, topRow, Math.max(1, Math.ceil(total / cols)), rowsVis);
+  footer("B Back", "A open");
+}
+function drawCapView() {
+  clear();
+  const list = capturesOf(capFolder), item = list[capViewIdx];
+  if (!item) { text("missing", 8, 8, { font: F_SMALL }); return; }
+  drawImageFit(IMG[item.image], 40, 24, 320, 168, true);
+  text("<", 14, 100); text(">", 386, 100, { align: "right" });
+  text((capViewIdx + 1) + "/" + list.length, 200, 8, { font: F_SMALL, align: "center" });
+  if (item.kind === "task" && item.task) text(item.task, 392, 8, { font: F_SMALL, align: "right" });
+  text(item.location || "", 8, 200, { font: F_SMALL });
+  text(item.when || "", 392, 200, { font: F_SMALL, align: "right" });
+  footer("B Back", "crank / < >");
+}
+function punchDigit(label, cx, cy) {
+  // big blank digit hole with a 2px ink rim so it reads on dots + logo
+  const s = 11, rects = [];
+  const R = (x, y, w, h) => rects.push([cx + x, cy + y, w, h]);
+  if (label === "1") { R(-s / 2, -3 * s, s, 6 * s); R(-1.5 * s, -3 * s, s, s); R(-1.5 * s, 2 * s, 3 * s, s); }
+  else if (label === "2") { R(-1.5 * s, -3 * s, 3 * s, s); R(0.5 * s, -3 * s, s, 3.5 * s); R(-1.5 * s, -s / 2, 3 * s, s); R(-1.5 * s, -s / 2, s, 3.5 * s); R(-1.5 * s, 2 * s, 3 * s, s); }
+  else if (label === "3") { R(-1.5 * s, -3 * s, 3 * s, s); R(0.5 * s, -3 * s, s, 6 * s); R(-s, -s / 2, 2.5 * s, s); R(-1.5 * s, 2 * s, 3 * s, s); }
+  else R(-3 * s, -s, 6 * s, 2 * s);
+  g.fillStyle = BLACK; rects.forEach(r => g.fillRect(r[0] - 3, r[1] - 3, r[2] + 6, r[3] + 6));
+  g.fillStyle = WHITE; rects.forEach(r => g.fillRect(r[0], r[1], r[2], r[3]));
+}
+function drawCountdown(now) {
+  const label = countN > 0 ? String(countN) : "go";
+  if (countAction === "TaskBump") { // plain, not logo
+    clear();
+    text(label, 200, 86, { font: F_TITLE, align: "center" });
+    const t = DAILY.find(d => d.id === countTaskId);
+    text(t ? t.label : "", 200, 160, { font: F_SMALL, align: "center" });
+    text("B cancel", 200, 222, { font: F_SMALL, align: "center" });
+    return;
+  }
+  clear();
+  g.drawImage(ditherField, 0, 0);               // light dotted field
+  const o = Math.round(2 * Math.sin(now / 200)); // breathing logo ink
+  g.drawImage(logoInk, o, o);
+  punchDigit(label, 200, 118);                  // solid blank digit holes
+  rect(150, 204, 100, 32, WHITE);
+  text(countAction || "Capture", 200, 207, { font: F_SMALL, align: "center" });
+  text("B cancel", 200, 222, { font: F_SMALL, align: "center" });
+}
+
+// ------------------------------------------------------------ countdown ---
+function clearCountdown() { if (countTimer) clearTimeout(countTimer); countTimer = null; countN = 0; countAction = null; countTaskId = null; }
+function startCountdown(action, taskId, fromAsk) {
+  clearCountdown(); trayOpen = false;
+  countAction = action; countTaskId = taskId || null; countFromAsk = !!fromAsk; countN = 3; go("countdown");
+  sfx(action === "TaskBump" ? "confirm" : "whoosh");
+  const step = () => { countTimer = setTimeout(() => { countN--; if (countN <= 0) finishCountdown(); else { sfx("tick"); step(); } }, 1000); };
+  step();
+}
+function finishCountdown() {
+  const act = countAction, tid = countTaskId, fromAsk = countFromAsk; clearCountdown();
+  if (act === "Capture") {
+    const p = route().place;
+    saved.unshift({ kind: "free", category: selected, label: ASK.title,
+      location: selected !== "none" && p ? p.name : "along the walk", when: nowDate() + " " + nowTime(), image: ASK.image });
+    persist(); sfx("chirp"); go(fromAsk ? "ask" : "path");
+  } else if (act === "Ask") { askLayer = 0; sfx("chirp"); go("ask"); }
+  else if (act === "TaskBump") {
+    const d = DAILY.find(t => t.id === tid);
+    if (d && (tasks[tid] || 0) < d.max) {
+      tasks[tid] = (tasks[tid] || 0) + 1; xpTotal++;
+      saved.unshift({ kind: "task", label: d.label, task: d.label, location: (route().place && selected !== "none") ? route().place.name : "along the walk", when: nowDate() + " " + nowTime(), image: "entry" });
+      persist(); sfx("chirp");
+    }
+    go("tasks");
+  } else go("path");
+}
+
+// ---------------------------------------------------------------- input ---
+const wrap = (i, d, n) => ((i + d) % n + n) % n;
+function input(k) {
+  unlockAudio();
+  const isCrank = k === "crankUp" || k === "crankDown", cd = k === "crankUp" ? 1 : k === "crankDown" ? -1 : 0;
+  switch (state) {
+    case "splash":
+      if (k === "a") { go("home"); enterMenuFanfare(); }
+      break;
+    case "home":
+      if (k === "up" || k === "down" || isCrank) { homeIdx = wrap(homeIdx, k === "up" ? -1 : k === "down" ? 1 : cd, HOME_ITEMS.length); sfx("tick"); }
+      else if (k === "a") {
+        sfx("confirm"); const it = HOME_ITEMS[homeIdx];
+        if (it === "Start") { catIndex = 0; go("vibe"); }
+        else if (it === "Detour log") { logScroll = 0; go("log"); }
+        else if (it === "Captures") { capFolder = "free"; go("folders"); }
+        else { tasksFromHome = true; taskIdx = 0; sfx("task"); go("tasks"); } // Daily tasks → task.wav
+      } else if (k === "b") { sfx("tick"); go("splash"); }
+      break;
+    case "vibe":
+      if (k === "up" || k === "down" || isCrank) { catIndex = wrap(catIndex, k === "up" ? -1 : k === "down" ? 1 : cd, CAT_KEYS.length); sfx("tick"); }
+      else if (k === "a") { sfx("confirm"); selected = CAT_KEYS[catIndex]; go("loading"); }
+      else if (k === "b") { sfx("tick"); go("home"); }
+      break;
+    case "loading": break; // silent
+    case "countdown":
+      if (k === "b") { sfx("deny"); const back = countAction === "TaskBump" ? "tasks" : (countFromAsk ? "ask" : "path"); clearCountdown(); go(back); }
+      break;
+    case "log": {
+      const vis = 5, maxS = Math.max(0, detourLog.length - vis);
+      if (k === "up" || k === "down" || isCrank) {
+        const before = logScroll;
+        logScroll = Math.max(0, Math.min(maxS, logScroll + (k === "up" ? -1 : k === "down" ? 1 : cd)));
+        if (logScroll !== before) sfx("tick");
+      } else if (k === "b") { sfx("tick"); go("home"); }
+      else if (k === "a") sfx("deny");
+      break;
+    }
+    case "folders":
+      if (k === "left" || k === "right" || isCrank) { capFolder = capFolder === "free" ? "task" : "free"; sfx("tick"); }
+      else if (k === "a") { if (capturesOf(capFolder).length) { sfx("confirm"); capTileIdx = 0; go("tiles"); } else sfx("deny"); }
+      else if (k === "b") { sfx("tick"); go("home"); }
+      break;
+    case "tiles": {
+      const n = Math.max(1, capturesOf(capFolder).length);
+      const d = { left: -1, right: 1, up: -4, down: 4 }[k] || cd;
+      if (d) { capTileIdx = wrap(capTileIdx, d, n); sfx("tick"); }
+      else if (k === "a") { if (capturesOf(capFolder).length) { sfx("confirm"); capViewIdx = capTileIdx; go("view"); } else sfx("deny"); }
+      else if (k === "b") { sfx("tick"); go("folders"); }
+      break;
+    }
+    case "view": {
+      const n = Math.max(1, capturesOf(capFolder).length);
+      const d = k === "left" ? -1 : k === "right" ? 1 : cd;
+      if (d) { capViewIdx = wrap(capViewIdx, d, n); sfx("tick"); }
+      else if (k === "b") { sfx("tick"); capTileIdx = capViewIdx; go("tiles"); }
+      break;
+    }
+    case "path":
+      if (trayOpen) {
+        if (k === "up" || k === "down" || isCrank) { trayIdx = wrap(trayIdx, k === "up" ? -1 : k === "down" ? 1 : cd, TRAY.length); sfx("tick"); }
+        else if (k === "a") {
+          const act = TRAY[trayIdx];
+          if (act === "Tasks") { sfx("task"); trayOpen = false; tasksFromHome = false; taskIdx = 0; go("tasks"); }
+          else startCountdown(act); // whoosh
+        } else if (k === "b") { sfx("tick"); trayOpen = false; }
+      } else {
+        if (isCrank || k === "left" || k === "right") { const n = instructions().length; if (n) { stepIndex = wrap(stepIndex, k === "left" ? -1 : k === "right" ? 1 : cd, n); sfx("tick"); } }
+        else if (k === "a") { sfx("confirm"); trayIdx = 0; trayOpen = true; }
+        else if (k === "b") { sfx("tick"); go("home"); }
+      }
+      break;
+    case "ask":
+      if (isCrank || k === "left" || k === "right") { askLayer = wrap(askLayer, k === "left" ? -1 : k === "right" ? 1 : cd, ASK.layers.length); sfx("tick"); }
+      else if (k === "a") startCountdown("Capture", null, true);
+      else if (k === "b") { sfx("tick"); go("path"); }
+      break;
+    case "tasks":
+      if (k === "up" || k === "down" || isCrank) { taskIdx = wrap(taskIdx, k === "up" ? -1 : k === "down" ? 1 : cd, DAILY.length); sfx("tick"); }
+      else if (k === "a") { const t = DAILY[taskIdx]; if ((tasks[t.id] || 0) < t.max) startCountdown("TaskBump", t.id); else sfx("deny"); }
+      else if (k === "b") { sfx("tick"); go(tasksFromHome ? "home" : "path"); }
+      break;
+  }
+}
+function enterMenuFanfare() { if (!fanfareDone && audioReady) { fanfareDone = true; sfx("ask"); } } // opening sound = ask.wav (was fanfare)
+
+const KEYMAP = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+  x: "a", X: "a", Enter: "a", a: "a", A: "a", z: "b", Z: "b", Backspace: "b", b: "b", B: "b",
+  "[": "crankDown", "]": "crankUp", ",": "crankDown", ".": "crankUp" };
+window.addEventListener("keydown", e => {
+  if (e.key === "m" || e.key === "M") { toggleMute(); return; }
+  const k = KEYMAP[e.key]; if (!k) return;
+  e.preventDefault(); if (e.repeat && (k === "a" || k === "b")) return; input(k);
+});
+document.querySelectorAll("[data-k]").forEach(b => b.addEventListener("click", () => input(b.dataset.k)));
+let wheelAcc = 0;
+cv.addEventListener("wheel", e => {
+  e.preventDefault(); wheelAcc += e.deltaY;
+  while (Math.abs(wheelAcc) >= 40) { input(wheelAcc > 0 ? "crankUp" : "crankDown"); wheelAcc -= 40 * Math.sign(wheelAcc); }
+}, { passive: false });
+cv.addEventListener("click", () => unlockAudio());
+function toggleMute() { muted = !muted; unlockAudio(); updateSndLabel(); document.getElementById("btnMute").textContent = muted ? "unmute (M)" : "mute (M)"; }
+document.getElementById("btnMute").addEventListener("click", toggleMute);
+document.getElementById("btnReset").addEventListener("click", () => { try { localStorage.removeItem(STORE); } catch (e) {} restore(); go("home"); });
+document.getElementById("btnFeed").addEventListener("click", () => loadLastFeed());
+
+// ----------------------------------------------------------------- loop ---
+const DRAW = { splash: drawSplash, home: drawHome, vibe: drawVibe, loading: drawLoading, path: drawPath, ask: drawAsk,
+  tasks: drawTasks, log: drawLog, folders: drawFolders, tiles: drawTiles, view: drawCapView, countdown: drawCountdown };
+function tick(now) {
+  if (state === "splash" && now - stateAt > SPLASH_MS) { go("home"); enterMenuFanfare(); }
+  if (state === "loading" && now - stateAt > LOAD_MS) {
+    stepIndex = 0; trayOpen = false;
+    const p = route().place;
+    detourLog.unshift({ vibe: selected, place: selected === "none" ? "no detour" : (p ? p.name : "?"), when: nowDate(), time: nowTime() });
+    persist(); go("path");
+  }
+  (DRAW[state] || drawSplash)(now);
+  oneBit();
+  requestAnimationFrame(tick);
+}
+restore();
+loadImages().then(() => { prepDerived(); return loadLastFeed(); }).then(() => { stateAt = performance.now(); requestAnimationFrame(tick); });
+</script>
+</body>
+</html>
