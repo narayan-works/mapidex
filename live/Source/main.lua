@@ -10,7 +10,7 @@ import "neon_snap" -- Capture -> Neon snapshot via http://127.0.0.1:8787/snap (S
 -- Phone companion (../mapidex-companion) serves the feed on Wi-Fi.
 -- Set PHONE_IP to the IP the companion app shows, then rebuild.
 -- (No-rebuild override: one-line URL in Data/com.narayan.mapidex.live/live_url.txt)
-PHONE_IP = "10.104.7.254"
+PHONE_IP = "192.168.43.52"
 LIVE_FEED_URL = "http://" .. PHONE_IP .. ":8080/feed.json"
 -- Fetched on every Start -> vibe -> loading. Falls back to Data/live_feed.json, then baked feed.lua.
 -- =================================
@@ -96,6 +96,7 @@ for i = 0, LOAD_FRAMES - 1 do
 end
 local loadAnim = 1 -- 1..LOAD_FRAMES
 
+local seedDemoData_log
 local function seedDemoData()
 	-- dummy Golden Gate for both capture folders (for now)
 	saved = {
@@ -108,6 +109,10 @@ local function seedDemoData()
 		{ kind = "task", label = "Golden Gate Bridge", task = "capture signs", location = "SF waterfront", when = "Oct 9 4:00p", image = "images/preview" },
 		{ kind = "task", label = "Golden Gate Bridge", task = "capture leaves", location = "SF waterfront", when = "Oct 8 9:30a", image = "images/entry" },
 	}
+	seedDemoData_log()
+end
+
+seedDemoData_log = function()
 	if #detourLog == 0 then
 		detourLog = {
 			{ vibe = "play", place = "Marina Green", when = "Oct 10", time = "5:12p" },
@@ -142,10 +147,12 @@ local function restore()
 		if data.tasks then tasks = data.tasks end
 		if data.xpTotal then xpTotal = data.xpTotal end
 	end
-	local snaps = {}
-	for _, e in ipairs(saved) do if e.snap then snaps[#snaps + 1] = e end end
-	seedDemoData()
-	for i = #snaps, 1, -1 do table.insert(saved, 1, snaps[i]) end
+	-- keep real captures; only seed demo mocks on first run / empty list
+	if not saved or #saved == 0 then
+		seedDemoData()
+	else
+		seedDemoData_log() -- seeds log only if empty; never touches saved
+	end
 end
 restore()
 
@@ -1231,7 +1238,8 @@ function pd.update()
 			-- kick off live GET from update context (permission dialog may yield here)
 			fetchPending = false
 			drawLoading()
-			FeedLive.start(LIVE_FEED_URL)
+			-- Playdate vibe pick is the trigger: phone builds office -> vibe -> home, then we pull the feed
+			FeedLive.start(LIVE_FEED_URL, nil, selected)
 		end
 		loadFrames -= 1
 		local done = LOAD_HOLD - loadFrames

@@ -1,7 +1,7 @@
 # Mapidex — handoff log
 
 Silent tracking by **logger** so this can continue in Claude / Antigravity / another bot if Grok dies.  
-Last updated: **2026-10-11 ~1:20 PM PT** (group chat: `mapidéx - Play Date`)
+Last updated: **2026-10-11 ~2:52 PM PT** (group chat: `mapidéx - Play Date`)
 
 ---
 
@@ -134,6 +134,78 @@ mapidéx Playdate **done**: Capture → unmarked snap → phone → looking-it-u
 architect companion **done**: Ask cascade · `/ask.json` · Playdate-vibe UI · auto-start · logs/captures.
 **Narayan end-to-end:** install 0.5.2 · same Wi‑Fi · `PHONE_IP` · Neon charged/worn · one Capture → Ask.
 Designer **done** too (sheet locks · `#FFC500` · Ask wait copy · WAVs on 8765). All software green. demos ~**1:30 PM PT**. If live not green by ~**1:25 PT**, stage **demo zip** + Neon story — don’t burn slot on Wi‑Fi.
+
+
+### Arc form + GitHub push (~1:24 PM PT)
+Narayan: fill Arc (INTERFACE?) form on Arc — **don’t submit**, he’ll check. Also push whatever we have to GitHub.
+**Pushed:** https://github.com/narayan-works/mapidex (`demo/` · `live/` · `companion/`). Gemini key / APKs / captures gitignored.
+ideation paste-ready draft (not submitted): Project **MapéDex**; commute Pokédex + Neon Capture → Ask; team Narayan (hello@narayan.works); GitHub link above; Works vs unfinished (live Wi‑Fi E2E / route trigger / you-dot); credits Playdate·Neon·Pixel·OSRM/OSM·Nano+Gemini·Wiki; Present Narayan; Needs power+table; Track **Vision**. Architect: cascade is built; unfinished is live Wi‑Fi E2E. Portal paste = Narayan only.
+
+
+### Pixel install + launcher icon (~2:09–2:10 PM PT)
+Narayan: Studio Run greyed (Pixel selected). mapidéx adb-installed companion — open from drawer. Note IP for `PHONE_IP`.
+Narayan: Android app icon = MapéDex logo, **yellow `#FFC500` background**, pixelated **black/grey** logo (from `demo/assets` splash). Architect building icon + reinstall.
+
+
+### Companion v0.5.3 + Capture dither + web pitch (~2:14 PM PT)
+Architect: companion **v0.5.3** on Pixel — yellow `#FFC500` launcher + hard 1-bit MapéDex mark (black/mid-grey), Home header same. Not pushed to GitHub yet. Designer lock: no soft app-icon blur.
+Narayan: Capture 1-bit thumbs too noisy — mapidéx switching cleaner high-contrast dither.
+Narayan: skipped slides → **web pitch** (@designer). Identity: `#FFC500` · hard 1-bit · Playdate chunk. Narayan locked **screen walkthrough** overview (not question-led essay): Menu → vibe → Path → Capture → looking it up → Ask · companion pocket. Ideation beats: What it is · Menu · Vibe→Path · Capture · looking it up→Ask · Companion. He does live walkthrough.
+
+
+### Capture dither rewrite (~2:16 PM PT)
+Narayan: Capture thumbs too noisy; asked status (not shortcut). mapidéx rewriting dither (high-contrast 1-bit). Narayan: use already-captured images — reprocess, no new Capture. Landed ordered-dither ~2:30 PT. Narayan: cool / good after Sim restart.
+
+
+### Pitch = slides again (~2:17 PM PT)
+Narayan: yes on updated beats; build **slides** in MapéDex/Playdate visual vibe (not only web). No Daily tasks. Add Path tray before Capture; add **Stack** slide.
+Beats: What it is · Menu (Start/Detour log/Captures) · Vibe→Path · Path tray Ask·Capture · Capture · looking it up→Ask · Companion · Stack (Playdate · Neon · Pixel · OSRM/OSM · Nano→web→Gemini).
+Architect lock: `#FFC500` · 1-bit · chunky. Clarified: **slides as a web prototype** — click-through deck in browser (not Google Slides/Keynote). Same 8 beats. @designer builds.
+
+
+### Pitch + Capture update (~2:25 PM PT)
+mapidéx: Capture thumbs clearer (high-contrast threshold, reprocessed existing). Narayan still unhappy (“not good”) — may need another pass.
+designer: web click-through at `mapidex/pitch/index.html`; also GH Pages then Narayan said local is fine — now [http://localhost:8768](http://localhost:8768).
+Clarified: no **Daily tasks beat**, but Path tray = **Ask · Tasks · Capture** (match device). Narayan: make vibes + tray **interactable**. Architect soft lock: clickable vibe/tray updates mock Playdate.
+
+
+### Pitch architecture diagram (~2:26 PM PT)
+Narayan: Stack should show how it works (architecture), not just list. Soft lock:
+three boxes **Neon** (eyes) · **Pixel** (pocket: GPS·OSRM·Nano→web→Gemini) · **Playdate** (toy UI).
+Horizontal: **Neon → Pixel → Playdate**; Capture L→R, Ask back. Small labels under. @designer draw; interactive vibes+tray still pending.
+
+
+### Capture OK + dense Stack (~2:30 PM PT)
+mapidéx: clearer ordered-dither Captures in; restart Sim. Narayan: “cool cool is good.” Music: `ask.wav` splash→menu, `task.wav` Daily tasks (live+demo). Interruptions were room messages cutting shell mid-run.
+Stack diagram denser horizontal: **Neon** (scene+gaze) → **Pixel** (GPS · OSRM · Capture store · Nano · Wiki/OSM · Gemini) → **JSON** (`/feed` `/ask`) → **Playdate** (Menu · Path · tray · looking it up · Ask · Captures). 3–4 verbs/box; Pixel fat. @designer draw.
+
+
+### Pitch interactive landed (~2:31 PM PT)
+designer: localhost:8768 updated — clickable vibes + Ask·Tasks·Capture; Stack = horizontal Neon→Pixel→JSON→Playdate denser verbs. Hard-refresh. Architect: looks right.
+
+
+### Pitch Stack polish (~2:33 PM PT)
+Narayan: remove bottom duplicate NEON→PIXEL→… line; return-arrow labels too light grey on yellow — make **dark/black**. Architect → @designer. **Done:** bottom line gone, return arrows black. Hard-refresh 8768 `#8`.
+
+
+### Ask pipe down (~2:36 PM PT)
+Narayan: Ask not working. mapidéx: Neon/Pupil not live (8787 up, glasses Companion IPs timed out). Mapidex companion `10.104.7.254` not answering `/ask.json`. Narayan: same Wi‑Fi, was live — old `PHONE_IP` stale. New net `192.168.43.x`: companion **`192.168.43.52`** (nano_status downloading) · Neon **`192.168.43.6`**. mapidéx updated PHONE_IP + rebuilt live. Reload Sim → Capture→Ask. Architect: while Nano downloading, Ask should fall through Gemini; empty `/ask.json` = different bug.
+
+
+### Gaze test first (~2:43 PM PT)
+Narayan: Capture→Ask still not working; test gaze in web UI first. mapidéx: [http://localhost:8787](http://localhost:8787) — Neon `192.168.43.6` live (~188 Hz gaze, ~10 fps scene); `worn=false` until glasses on. Architect: confirm dot with worn=true, then Capture; if web OK but Capture fails → Playdate→companion hop.
+
+
+### Gaze OK — use live Sim (~2:44 PM PT)
+Narayan: gaze web working; Capture failed because he had **demo** open. Soft lock: Neon Capture = **Mapidex - live** Sim only (`live/mapidex-live.pdx` → localhost:8787). Demo won’t hit glasses. Hardware Playdate can’t hit Mac localhost yet. Designer: pitch grey `#2a2a2a` — hard-refresh 8768.
+
+
+### Captures wipe bug (~2:47 PM PT)
+Narayan: live Capture not working; old captures gone — only SF Golden Gate mocks. mapidéx found: **every launch wiped Captures** back to mocks. **Fixed** ~2:47p PT — reload `live/mapidex-live.pdx`. Soft lock: seed mocks only if empty. Narayan: wipe ≠ gaze problem. Check 8787 with worn=true; Sim has 2 Neon snaps already. After Capture: “looking it up…” vs pathNote splits snap vs Ask. Neon Companion battery ~15%. Designer: pitch title uses real MapéDex logo — hard-refresh 8768. Playdate splash wordmark may still need mapidéx.
+
+
+### Live phone connected, no detour yet (~2:51 PM PT)
+Sim footer: `baked: phone: no route built yet` — GPS live, `detour.live=false`. Detours don’t spawn from Home/Work alone; need companion **route-debug Build** once (temp) or Playdate vibe → `POST /route` (soft lock after demo). Ideation: story shouldn’t need phone Build. Narayan thought data wasn’t talking to new app — it is (`phone: no route built yet`). Architect **wiring vibe → POST /route** now; meantime route-debug Build once. After build, Path → `live from phone`.
 
 ## What this is
 

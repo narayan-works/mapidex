@@ -13,6 +13,10 @@ Experimental / wiring copy of Mapidex for Playdate. This is where live data work
   (Simulator: `~/Developer/PlaydateSDK/Disk/Data/com.narayan.mapidex.live/`).
 - On every Start -> vibe -> loading, `FeedLive.start()` (Source/feed_live.lua) does `playdate.network.http` GET (6 s timeout);
   loading holds until it finishes. Fallbacks: `Data/.../live_feed.json` drop file, then baked `Source/feed.lua`.
+- **Vibe pick is the trigger (companion 0.5.3+):** A on a vibe -> `POST http://<ip>:8080/route?vibe=<vibe>` (phone builds
+  office -> vibe -> home with saved Home/Work, OSRM + Overpass) -> polls `/feed.json` until `detour.build_id` catches up
+  and `detour.status != building` (<=60 s). Loading footer shows the phone's progress line. Old companion (404) -> plain GET.
+  Phone's route-debug Build is only a backup now. Curl: `curl -X POST "http://<ip>:8080/route?vibe=play&wait=1"`.
 - The phone's built route replaces only its own vibe (`route.vibe`); other vibes stay baked.
 - Path footer (and loading screen) shows one line: `live from phone` / `live_feed.json (file)` / `baked: <error>` /
   `phone route is <vibe>; this is baked`.

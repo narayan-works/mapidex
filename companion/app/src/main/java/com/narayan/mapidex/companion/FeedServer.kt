@@ -12,6 +12,11 @@ import java.io.FileInputStream
  * Tiny LAN server (port 8080).
  *   GET  /feed.json              route/places feed (unchanged)
  *   GET  /health                 {"ok":true,...}
+ *   POST /route  (alias /build)  vibe=relax|play|social|essentials|none (form/JSON/?vibe=) → builds office→vibe→home
+ *                                with saved home/work (OSRM + Overpass) into /feed.json. Returns immediately
+ *                                {ok,status:"building",build_id}; poll /feed.json until detour.build_id ≥ id and
+ *                                detour.status != "building". ?wait=1 blocks (≤60 s) and returns the feed.
+ *   GET  /route                  current detour status (same "detour" block as feed.json)
  *   POST /capture                Neon frame + gaze → stored → Ask cascade starts (returns immediately; ?wait=1 blocks ≤40 s)
  *   POST /ask                    re-run Ask on the last capture, optional question (form/JSON "question" or ?q=)
  *   GET  /ask.json               Playdate Ask card
@@ -47,6 +52,7 @@ class FeedServer(private val capturesDir: File, port: Int = PORT) : NanoHTTPD(po
                 JSONObject().put("ok", true).put("version", FeedState.VERSION)
                     .put("nano_status", AskEngine.nanoStatus).put("gemini_key", GeminiCloud.hasKey).toString()
             )
+            "/route", "/build" -> if (post) buildRoute(s) else json(JSONObject(FeedState.feedJson()).getJSONObject("detour").put("ok", true).toString())
             "/ask.json" -> json(AskEngine.askJson())
             "/verify.json" -> json(AskEngine.verifyJson())
             "/capture" -> if (post) capture(s) else json(Response.Status.METHOD_NOT_ALLOWED, err("POST multipart image + gaze_x/gaze_y"))
@@ -60,7 +66,7 @@ class FeedServer(private val capturesDir: File, port: Int = PORT) : NanoHTTPD(po
             "/capture/latest.png" -> latest("png")
             "/" -> newFixedLengthResponse(
                 Response.Status.OK, "text/plain",
-                "Mapidex companion v${FeedState.VERSION}\nGET /feed.json\nGET /health\nPOST /capture\nPOST /ask\nGET /ask.json\nPOST /verify\nGET /verify.json\n"
+                "Mapidex companion v${FeedState.VERSION}\nGET /feed.json\nGET /health\nPOST /route vibe=…\nPOST /capture\nPOST /ask\nGET /ask.json\nPOST /verify\nGET /verify.json\n"
             )
             else -> json(Response.Status.NOT_FOUND, err("not found"))
         }
@@ -115,6 +121,27 @@ class FeedServer(private val capturesDir: File, port: Int = PORT) : NanoHTTPD(po
                 .put("size", JSONObject().put("w", cap.w).put("h", cap.h))
                 .put("ask", JSONObject(AskEngine.askJson()))
                 .toString()
+        )
+    }
+
+    private fun buildRoute(s: IHTTPSession): Response {
+        val b = readBody(s)
+        val raw = b.fields["vibe"] ?: b.fields["category"] ?: b.fields["v"]
+        val vibe = RouteBuilder.normalize(raw)
+            ?: return json(Response.Status.BAD_REQUEST, err("bad vibe '${raw ?: ""}' (one of ${Detour.VIBES.joinToString("|")})"))
+        if (b.fields["wait"] == "1") {
+            return try {
+                RouteBuilder.buildNow(vibe)
+                json(FeedState.feedJson())
+            } catch (e: Exception) {
+                json(Response.Status.SERVICE_UNAVAILABLE, err(e.message ?: "route failed"))
+            }
+        }
+        val id = RouteBuilder.request(vibe)
+        Log.i(TAG, "POST /route vibe=$vibe → build #$id")
+        return json(
+            JSONObject().put("ok", true).put("status", "building").put("vibe", vibe).put("build_id", id)
+                .put("poll", "/feed.json").toString()
         )
     }
 

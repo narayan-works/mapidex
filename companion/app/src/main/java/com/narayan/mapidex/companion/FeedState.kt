@@ -27,6 +27,12 @@ object FeedState {
         private set
     @Volatile var detourMessage: String? = null
         private set
+    /** build_id of the build the status above belongs to (RouteBuilder); 0 = none yet. */
+    @Volatile var buildId: Int = 0
+        private set
+    /** Vibe of the build in flight / last attempted. */
+    @Volatile var buildVibe: String? = null
+        private set
 
     fun update(lat: Double, lng: Double) {
         this.hasFix = true
@@ -35,14 +41,18 @@ object FeedState {
         this.updatedAt = Instant.now().toString()
     }
 
-    fun setBuilding(vibe: String, msg: String) {
+    fun setBuilding(vibe: String, msg: String, id: Int = buildId) {
         selected = vibe
+        buildId = id
+        buildVibe = vibe
         detourStatus = "building"
         detourMessage = msg
     }
 
-    fun setRoute(vibe: String, r: JSONObject) {
+    fun setRoute(vibe: String, r: JSONObject, id: Int = buildId) {
         route = r
+        buildId = id
+        buildVibe = vibe
         selected = vibe
         detourStatus = "ok"
         detourMessage = r.optString("note").takeIf { r.has("note") && !r.isNull("note") }
@@ -50,7 +60,8 @@ object FeedState {
     }
 
     /** Keeps the previous good route in the feed; only status flips to error. */
-    fun setError(msg: String) {
+    fun setError(msg: String, id: Int = buildId) {
+        buildId = id
         detourStatus = "error"
         detourMessage = msg
     }
@@ -63,7 +74,7 @@ object FeedState {
         return JSONObject()
             .put("from", "office")
             .put("to", "home")
-            .put("summary", "demo · tap Build route on phone")
+            .put("summary", "demo · pick a vibe on Playdate")
             .put("path", JSONObject().put("w", 180).put("h", 100).put("pts", pts))
     }
 
@@ -86,6 +97,8 @@ object FeedState {
                     .put("status", detourStatus)
                     .put("message", detourMessage ?: JSONObject.NULL)
                     .put("live", r != null)
+                    .put("build_id", buildId)
+                    .put("vibe", buildVibe ?: JSONObject.NULL)
             )
             .put("meta", JSONObject().put("source", "mapidex-companion-v$VERSION"))
             .toString(2)

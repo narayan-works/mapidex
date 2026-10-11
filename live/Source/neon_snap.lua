@@ -4,6 +4,7 @@
 --   Server grabs current Neon scene frame + gaze xy + worn, saves on the Mac to
 --     mapidex/live/captures_local/snap-<ts>.png / _1bit.png / .json
 --   and returns JSON {ok, path, gaze_x, gaze_y, worn, ts, when, thumb_w, thumb_h, bits(hex 1-bit thumb)}.
+--   Thumb is adaptive-threshold 1-bit (no Floyd-Steinberg sparkle); size from server (280x210).
 --   We rebuild the 1-bit thumb as a Playdate image, save it with datastore.writeImage
 --   (Data/com.narayan.mapidex.live/snaps/<id>.pdi) and hand it back to main.lua.
 -- Later: swap SNAP_URL for the phone companion's POST /capture.

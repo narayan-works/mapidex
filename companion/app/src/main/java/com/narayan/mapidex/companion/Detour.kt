@@ -32,6 +32,8 @@ object Detour {
     private const val CARD_PTS = 24
     private const val LATLNG_PTS = 64
     private const val MAX_CANDIDATES = 3
+    /** Total time across Overpass mirrors before falling back to a direct route (Playdate waits ≤60 s). */
+    private const val OVERPASS_BUDGET_MS = 35_000L
     private const val WALK_MPS = 1.4 // ~3.1 mph; public OSRM demo ignores the foot profile
 
     // Same rules as classify() in the Python pipe, in priority order.
@@ -60,12 +62,16 @@ object Detour {
             val direct = osrmRoute(listOf(o, h), steps = false)
             val line = direct.coords
             progress("2/3 Overpass: $vibe places along corridor…")
-            val elements = overpassPois(bbox(line))
-            val buckets = bucketPlaces(elements, line)
+            // Overpass is flaky (504s): degrade to the direct route with a note instead of failing the build.
+            val elements = try { overpassPois(bbox(line)) } catch (e: DetourException) {
+                note = "places lookup busy — direct route (retry vibe)"
+                null
+            }
+            val buckets = if (elements != null) bucketPlaces(elements, line) else emptyMap()
             candidates = buckets[vibe].orEmpty()
             val mid = line[line.size / 2]
             via = candidates.minByOrNull { d2(it.lat, it.lng, mid.lat, mid.lng) }
-            if (via == null) note = "no named $vibe place near route — direct route instead"
+            if (via == null && note == null) note = "no named $vibe place near route — direct route instead"
             candidates = candidates.sortedBy { d2(it.lat, it.lng, mid.lat, mid.lng) }.take(MAX_CANDIDATES)
         }
 
@@ -197,7 +203,7 @@ object Detour {
 
     private fun overpassPois(b: BBox): JSONArray {
         val bb = "${b.s},${b.w},${b.n},${b.e}"
-        val query = """[out:json][timeout:60];
+        val query = """[out:json][timeout:20];
 (
   node["amenity"~"cafe|bar|pub|restaurant|cinema|pharmacy"]($bb);
   node["leisure"~"park|garden|playground|pitch|sports_centre"]($bb);
@@ -207,9 +213,13 @@ object Detour {
 out body;"""
         val body = "data=" + URLEncoder.encode(query, "UTF-8")
         val errors = mutableListOf<String>()
+        val deadline = System.currentTimeMillis() + OVERPASS_BUDGET_MS
         for (url in OVERPASS_MIRRORS) {
+            val left = deadline - System.currentTimeMillis()
+            if (left < 3_000) { errors += "${URL(url).host}: skipped (time budget)"; continue }
             try {
-                return JSONObject(httpPost(url, body, readTimeoutMs = 75_000)).optJSONArray("elements") ?: JSONArray()
+                return JSONObject(request(url, body, readTimeoutMs = minOf(22_000L, left).toInt(), connectTimeoutMs = 6_000))
+                    .optJSONArray("elements") ?: JSONArray()
             } catch (e: Exception) {
                 errors += "${URL(url).host}: ${e.message}"
             }
@@ -292,10 +302,10 @@ out body;"""
     private fun httpGet(url: String, readTimeoutMs: Int): String = request(url, null, readTimeoutMs)
     private fun httpPost(url: String, body: String, readTimeoutMs: Int): String = request(url, body, readTimeoutMs)
 
-    private fun request(url: String, body: String?, readTimeoutMs: Int): String {
+    private fun request(url: String, body: String?, readTimeoutMs: Int, connectTimeoutMs: Int = 15_000): String {
         val c = URL(url).openConnection() as HttpURLConnection
         try {
-            c.connectTimeout = 15_000
+            c.connectTimeout = connectTimeoutMs
             c.readTimeout = readTimeoutMs
             c.setRequestProperty("User-Agent", USER_AGENT)
             c.setRequestProperty("Accept", "application/json")

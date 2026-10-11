@@ -14,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,6 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -169,8 +174,12 @@ class MainActivity : ComponentActivity() {
         ) {
             // Playdate "Menu"-size title
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.size(10.dp).background(Pd.Accent).border(2.dp, Pd.Ink))
-                PxText("Mapidex", 16.sp, bold = true)
+                // 1-bit MapéDex mark (same chunk as Playdate splash) — no smoothing
+                Image(
+                    painter = BitmapPainter(ImageBitmap.imageResource(R.drawable.mapedex_mark), filterQuality = FilterQuality.None),
+                    contentDescription = "MapéDex",
+                    modifier = Modifier.height(28.dp)
+                )
                 PxText("companion", 11.sp, Pd.Quiet, modifier = Modifier.weight(1f))
                 PxText("v${BuildConfig.VERSION_NAME}", 9.sp, Pd.Quiet)
             }
@@ -312,21 +321,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Backup only — Playdate vibe pick (POST /route) is the real trigger. Same RouteBuilder path. */
     private fun buildRoute() {
         val v = vibe
-        val w = Places.get(Places.WORK)
-        val h = Places.get(Places.HOME)
         building = true
         routeError = null
         routeStatus = "Starting…"
-        FeedState.setBuilding(v, "starting")
         Thread {
             try {
-                val r = Detour.build(w, h, v) { msg ->
-                    FeedState.setBuilding(v, msg)
-                    runOnUiThread { routeStatus = msg }
-                }
-                FeedState.setRoute(v, r)
+                val r = RouteBuilder.buildNow(v) { msg -> runOnUiThread { routeStatus = msg } }
                 val ins = r.getJSONArray("instructions")
                 val steps = (0 until ins.length()).map { ins.getString(it) }
                 val via = r.optJSONObject("via")
@@ -339,12 +342,7 @@ class MainActivity : ComponentActivity() {
                     building = false
                 }
             } catch (e: Exception) {
-                val msg = when (e) {
-                    is Detour.DetourException -> e.message ?: "Route failed"
-                    is java.net.UnknownHostException -> "No internet: ${e.message}"
-                    else -> "Route failed: ${e.javaClass.simpleName}: ${e.message}"
-                }
-                FeedState.setError(msg)
+                val msg = e.message ?: "Route failed"
                 runOnUiThread {
                     routeError = msg + if (routeSummary != null) "\n(feed keeps last good route)" else ""
                     routeStatus = null

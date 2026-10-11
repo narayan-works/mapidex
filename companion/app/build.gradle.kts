@@ -22,8 +22,8 @@ android {
         applicationId = "com.narayan.mapidex.companion"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8
-        versionName = "0.5.2"
+        versionCode = 9
+        versionName = "0.5.3"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
         buildConfigField("String", "GEMINI_MODEL", "\"$geminiModel\"")
     }
