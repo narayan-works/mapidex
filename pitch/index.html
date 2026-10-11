@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MapéDex — overview</title>
+<style>
+:root{--y:#FFC500;--k:#000;--g:#8a8a8a;--w:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--y);color:var(--k);overflow:hidden;
+ font-family:"Helvetica Neue",Helvetica,system-ui,sans-serif;-webkit-font-smoothing:none;font-smooth:never;user-select:none}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+.beat{position:absolute;inset:0;display:none;grid-template-columns:1fr 1fr;align-items:center;gap:4vw;padding:6vh 6vw 14vh}
+.beat.on{display:grid}
+.beat.solo{grid-template-columns:1fr;justify-items:center;text-align:center}
+.num{font-weight:800;font-size:14px;letter-spacing:.2em;background:var(--k);color:var(--y);display:inline-block;padding:4px 8px;margin-bottom:18px}
+h1{font-weight:800;font-size:clamp(34px,5.4vw,76px);line-height:.95;letter-spacing:-.02em}
+h1 .gr{color:var(--g)}
+p.l{font-weight:700;font-size:clamp(16px,1.6vw,22px);line-height:1.3;margin-top:18px;max-width:30ch}
+.solo p.l{max-width:40ch;margin-inline:auto}
+.chips{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+.solo .chips{justify-content:center}
+.chip{border:3px solid var(--k);padding:6px 10px;font-weight:800;font-size:14px;background:var(--y)}
+.chip.k{background:var(--k);color:var(--y)}
+.pd{background:var(--y);border:4px solid var(--k);padding:22px 22px 54px;width:min(44vw,640px);justify-self:center;position:relative;box-shadow:10px 10px 0 var(--k)}
+.pd canvas{width:100%;height:auto;border:4px solid var(--k);background:#b1aea4}
+.pd .crank{position:absolute;right:-30px;top:40%;width:26px;height:60px;background:var(--k)}
+.pd .crank:after{content:"";position:absolute;right:-14px;top:22px;width:14px;height:16px;background:var(--g)}
+.pd .lbl{position:absolute;left:22px;bottom:16px;font-weight:800;font-size:13px;letter-spacing:.15em}
+.pd .ab{position:absolute;right:22px;bottom:12px;display:flex;gap:10px}
+.pd .ab i{width:26px;height:26px;background:var(--k);display:block;color:var(--y);font:800 12px/26px system-ui;text-align:center;font-style:normal}
+.pd .ab i.blink{animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{background:var(--g)}}
+.ph{border:4px solid var(--k);background:var(--k);padding:10px;width:min(26vw,32vh,320px);justify-self:center;box-shadow:10px 10px 0 var(--g)}
+.ph canvas{width:100%;height:auto}
+#wm{width:min(80vw,900px);height:auto;margin:0 auto 10px}
+/* stack */
+.stack{display:grid;gap:12px;width:min(44vw,620px);justify-self:center}
+.layer{border:4px solid var(--k);background:var(--y);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:8px 8px 0 var(--k)}
+.layer b{font-size:clamp(16px,1.6vw,22px);font-weight:800}
+.layer span{font-size:13px;font-weight:800;letter-spacing:.12em;color:var(--g);text-align:right}
+.layer.k{background:var(--k);color:var(--y);box-shadow:8px 8px 0 var(--g)}
+.layer.k span{color:var(--y);opacity:.75}
+.arrow{text-align:center;font-weight:800;font-size:14px;letter-spacing:.2em;line-height:1}
+footer{position:fixed;left:0;right:0;bottom:0;height:10vh;min-height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 6vw;border-top:4px solid var(--k);background:var(--y);font-weight:800}
+.dots{display:flex;gap:10px}
+.dots b{width:14px;height:14px;border:3px solid var(--k);display:block;cursor:pointer}
+.dots b.on{background:var(--k)}
+.dots b.done{background:var(--g)}
+.hint{font-size:12px;letter-spacing:.15em;opacity:.75}
+@media (max-width:800px){.beat{grid-template-columns:1fr;gap:3vh;padding-top:4vh}.pd{width:88vw}.ph{width:56vw}.stack{width:88vw}.pd .crank{display:none}}
+</style></head>
+<body>
+
+<section class="beat solo on" data-label="What it is">
+ <div>
+  <canvas id="wm" width="200" height="40"></canvas>
+  <div class="num">01 · WHAT IT IS</div>
+  <h1>A Playdate Pokédex<br><span class="gr">for the walk home.</span></h1>
+  <p class="l">Walk a bent path home. Capture what you look at. Ask names it.</p>
+ </div>
+</section>
+
+<section class="beat" data-label="Menu">
+ <div><div class="num">02 · MENU</div>
+  <h1>One crank,<br><span class="gr">three doors.</span></h1>
+  <p class="l">Start a walk, or open your Detour log and Captures.</p></div>
+ <div class="pd"><canvas data-s="menu" width="400" height="240"></canvas><div class="crank"></div><div class="lbl">PLAYDATE</div><div class="ab"><i>B</i><i>A</i></div></div>
+</section>
+
+<section class="beat" data-label="Vibe → Path">
+ <div><div class="num">03 · VIBE → PATH</div>
+  <h1>Pick a vibe.<br><span class="gr">Get a bent path.</span></h1>
+  <p class="l">Work → one detour → home. Not the fastest route.</p>
+  <div class="chips"><span class="chip">quiet</span><span class="chip k">coffee</span><span class="chip">green</span><span class="chip">weird</span></div></div>
+ <div class="pd"><canvas data-s="path" width="400" height="240"></canvas><div class="crank"></div><div class="lbl">PLAYDATE</div><div class="ab"><i>B</i><i>A</i></div></div>
+</section>
+
+<section class="beat" data-label="Path tray">
+ <div><div class="num">04 · PATH TRAY</div>
+  <h1>Ask · Capture.<br><span class="gr">Right on the path.</span></h1>
+  <p class="l">The tray sits under the map. Crank to pick, A to go.</p></div>
+ <div class="pd"><canvas data-s="tray" width="400" height="240"></canvas><div class="crank"></div><div class="lbl">PLAYDATE</div><div class="ab"><i>B</i><i>A</i></div></div>
+</section>
+
+<section class="beat" data-label="Capture">
+ <div><div class="num">05 · CAPTURE</div>
+  <h1>Press A.<br><span class="gr">Snap where you look.</span></h1>
+  <p class="l">Neon scene camera + gaze dot. Hi-res on the phone, 1-bit here.</p></div>
+ <div class="pd"><canvas data-s="cap" width="400" height="240"></canvas><div class="crank"></div><div class="lbl">PLAYDATE</div><div class="ab"><i>B</i><i class="blink">A</i></div></div>
+</section>
+
+<section class="beat" data-label="looking it up… → Ask">
+ <div><div class="num">06 · LOOKING IT UP… → ASK</div>
+  <h1>A short wait.<br><span class="gr">Then the name under the dot.</span></h1>
+  <p class="l">Lands as a card on the Playdate.</p></div>
+ <div class="pd"><canvas data-s="ask" width="400" height="240"></canvas><div class="crank"></div><div class="lbl">PLAYDATE</div><div class="ab"><i>B</i><i>A</i></div></div>
+</section>
+
+<section class="beat" data-label="Companion">
+ <div><div class="num">07 · COMPANION</div>
+  <h1>The yellow pocket.<br><span class="gr">Not a second MapéDex.</span></h1>
+  <p class="l">The Pixel runs the engine. The Playdate stays the face.</p>
+  <div class="chips"><span class="chip k">server</span><span class="chip">Captures</span><span class="chip">Ask log</span><span class="chip">detours</span></div></div>
+ <div class="ph"><canvas data-s="phone" width="180" height="360"></canvas></div>
+</section>
+
+<section class="beat" data-label="Stack">
+ <div><div class="num">08 · STACK</div>
+  <h1>Three devices.<br><span class="gr">One walk.</span></h1>
+  <p class="l">Eyes, pocket, screen.</p></div>
+ <div class="stack">
+  <div class="layer k"><b>Playdate</b><span>SCREEN · CRANK · A</span></div>
+  <div class="arrow">▲ ▼</div>
+  <div class="layer"><b>Pupil Labs Neon</b><span>SCENE + GAZE</span></div>
+  <div class="arrow">▼</div>
+  <div class="layer k"><b>Pixel companion</b><span>SERVER · LOGS</span></div>
+  <div class="arrow">▼</div>
+  <div class="layer"><b>OSRM / OSM</b><span>BENT PATH · PLACES</span></div>
+  <div class="layer"><b>Nano → web → Gemini</b><span>ASK CASCADE</span></div>
+ </div>
+</section>
+
+<footer><div id="ft">01 · What it is</div><div class="dots" id="dots"></div><div class="hint">CLICK · SPACE · ← →</div></footer>
+
+<script>
+const F={A:"01110100011000111111100011000110001",B:"11110100011000111110100011000111110",C:"01110100011000010000100001000101110",D:"11110100011000110001100011000111110",E:"11111100001000011110100001000011111",F:"11111100001000011110100001000010000",G:"01110100011000010111100011000101111",H:"10001100011000111111100011000110001",I:"01110001000010000100001000010001110",J:"00111000100001000010100101001001100",K:"10001100101010011000101001001010001",L:"10000100001000010000100001000011111",M:"10001110111010110101100011000110001",N:"10001110011010110011100011000110001",O:"01110100011000110001100011000101110",P:"11110100011000111110100001000010000",Q:"01110100011000110001101011001001101",R:"11110100011000111110101001001010001",S:"01111100001000001110000010000111110",T:"11111001000010000100001000010000100",U:"10001100011000110001100011000101110",V:"10001100011000110001100010101000100",W:"10001100011000110101101011101110001",X:"10001100010101000100010101000110001",Y:"10001100010101000100001000010000100",Z:"11111000010001000100010001000011111",
+"0":"01110100011001110101110011000101110","1":"00100011000010000100001000010001110","2":"01110100010000100010001000100011111","3":"11110000010000101110000010000111110","4":"00010001100101010010111110001000010","5":"11111100001111000001000011000101110","6":"00110010001000011110100011000101110","7":"11111000010001000100010000100001000","8":"01110100011000101110100011000101110","9":"01110100011000101111000010001001100",".":"00000000000000000000000000110001100","…":"00000000000000000000000001010100000",">":"10000010000010000010001000100010000","-":"00000000000000011111000000000000000","·":"00000000000000000100000000000000000",":":"00000011000110000000011000110000000","?":"01110100010000100010001000000000100","/":"00001000010001000100010001000010000"," ":"00000000000000000000000000000000000","É":"00010001001111110000111101000011111"};
+function txt(c,s,x,y,sc,col){c.fillStyle=col||"#000";s=s.toUpperCase();for(const ch of s){const g=F[ch]||F[" "];for(let i=0;i<35;i++)if(g[i]==="1")c.fillRect(x+(i%5)*sc,y+((i/5)|0)*sc,sc,sc);x+=6*sc}return x}
+function tw(s,sc){return s.length*6*sc-sc}
+const K="#000",G="#8a8a8a",W="#b1aea4",Y="#FFC500";
+function box(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h)}
+function frame(c,x,y,w,h,t,col){box(c,x,y,w,t,col);box(c,x,y+h-t,w,t,col);box(c,x,y,t,h,col);box(c,x+w-t,y,t,h,col)}
+function dither(c,x,y,w,h,col,step){c.fillStyle=col;for(let j=y;j<y+h;j+=2)for(let i=x+((j/2)%2?1:0);i<x+w;i+=step||2)c.fillRect(i,j,1,1)}
+
+(()=>{const c=document.getElementById("wm").getContext("2d");const s="MAPÉDEX";const sc=4;
+ txt(c,s,(200-tw(s,sc))/2+3,6+3,sc,G);txt(c,s,(200-tw(s,sc))/2,6,sc,K)})();
+
+let t=0;
+// shared bent path
+const P=[[50,190],[50,130],[150,130],[150,64],[260,64],[260,160],[350,160],[350,56]];
+function drawPath(c,label,moving,yOff){
+ box(c,0,0,400,240,W);dither(c,0,0,400,240,G,6);
+ for(let i=0;i<P.length-1;i++){const[a,b]=P[i],[d,e]=P[i+1];box(c,Math.min(a,d)-3,Math.min(b,e)-3,Math.abs(d-a)+6,Math.abs(e-b)+6,K)}
+ const pin=(x,y,l,f)=>{box(c,x-10,y-10,20,20,f?K:W);frame(c,x-10,y-10,20,20,3,K);box(c,x-tw(l,2)/2-4,y+14,tw(l,2)+8,18,K);txt(c,l,x-tw(l,2)/2,y+16,2,W)};
+ pin(50,190,"WORK",1);pin(260,64,"DETOUR",0);pin(350,56,"HOME",1);
+ let x=150,y=97;
+ if(moving){const L=[];for(let i=0;i<P.length-1;i++)L.push(Math.abs(P[i+1][0]-P[i][0])+Math.abs(P[i+1][1]-P[i][1]));const tot=L.reduce((a,b)=>a+b);let d=(t*2)%tot,i=0;while(d>L[i]){d-=L[i];i++}
+  const f=d/L[i];x=Math.round(P[i][0]+(P[i+1][0]-P[i][0])*f);y=Math.round(P[i][1]+(P[i+1][1]-P[i][1])*f)}
+ box(c,x-7,y-7,14,14,W);frame(c,x-7,y-7,14,14,3,K);
+ box(c,0,0,400,28,K);txt(c,label,12,7,2,W);txt(c,"2.4KM",330,7,2,W)}
+const S={
+menu(c){box(c,0,0,400,240,W);box(c,0,0,400,28,K);txt(c,"MAPÉDEX",12,7,2,W);txt(c,"5:42",348,7,2,W);
+ const items=["START WALK","DETOUR LOG","CAPTURES"];const sel=Math.floor(t/60)%3;
+ items.forEach((s,i)=>{const y=60+i*56;if(i===sel){box(c,20,y-10,360,44,K);txt(c,">",32,y+4,3,W);txt(c,s,60,y+4,3,W)}else{frame(c,20,y-10,360,44,2,K);txt(c,s,60,y+4,3,K)}})},
+path(c){drawPath(c,"VIBE: COFFEE",true)},
+tray(c){drawPath(c,"PATH",false);
+ // tray
+ box(c,0,196,400,44,K);const sel=Math.floor(t/60)%2;
+ [["ASK",20],["CAPTURE",210]].forEach(([s,x],i)=>{if(i===sel){box(c,x,202,170,32,Y);txt(c,s,x+85-tw(s,3)/2,207,3,K)}else{frame(c,x,202,170,32,3,G);txt(c,s,x+85-tw(s,3)/2,207,3,W)}})},
+cap(c){box(c,0,0,400,240,W);
+ dither(c,0,0,400,110,G,2);box(c,0,150,400,90,K);dither(c,0,152,400,88,G,4);
+ box(c,90,40,220,130,K);box(c,100,50,200,20,W);txt(c,"CAFÉ",168,54,2,K);
+ box(c,110,85,80,70,W);dither(c,110,85,80,70,K,3);box(c,210,85,80,85,W);frame(c,210,85,80,85,4,K);box(c,272,125,8,8,K);
+ box(c,40,60,30,110,K);box(c,25,40,60,40,K);dither(c,25,40,60,40,W,3);
+ const gx=150+Math.round(Math.sin(t/20)*6),gy=110+Math.round(Math.cos(t/27)*4);
+ frame(c,gx-14,gy-14,28,28,3,Y);frame(c,gx-17,gy-17,34,34,2,K);box(c,gx-3,gy-3,6,6,Y);
+ if(t%180>=150&&t%180<154)box(c,0,0,400,240,W);
+ box(c,0,0,400,28,K);txt(c,"CAPTURE",12,7,2,W);txt(c,"NEON",340,7,2,W);
+ box(c,0,212,400,28,K);txt(c,"A  SNAP   B  BACK",12,219,2,W)},
+ask(c){box(c,0,0,400,240,W);const wait=(t%300)<120;
+ box(c,0,0,400,28,K);txt(c,"ASK",12,7,2,W);
+ box(c,16,44,150,150,K);dither(c,18,46,146,60,G,2);box(c,40,90,100,80,W);dither(c,40,90,100,80,K,3);
+ box(c,82,112,10,10,Y);frame(c,76,106,22,22,2,W);
+ if(wait){const n=Math.floor(t/12)%4;txt(c,"LOOKING",190,80,3,K);txt(c,"IT UP"+".".repeat(n),190,110,3,K);
+  for(let i=0;i<10;i++)box(c,190+i*18,160,12,12,(i===Math.floor(t/6)%10)?K:G)}
+ else{box(c,182,44,204,150,K);txt(c,"BLUE BOTTLE",192,56,2,W);txt(c,"COFFEE",192,74,2,W);box(c,192,96,184,2,G);
+  txt(c,"THIRD WAVE CAFE",192,108,2,W);txt(c,"EST. 2002",192,126,2,W);txt(c,"UNDER THE DOT",192,166,2,Y)}
+ box(c,0,212,400,28,K);txt(c,wait?"LOOKING IT UP…":"A  SAVE   B  BACK",12,219,2,W)},
+phone(c){box(c,0,0,180,360,Y);box(c,0,0,180,14,K);txt(c,"5:42",6,4,1,Y);
+ box(c,62,24,56,56,K);txt(c,"M",72,34,6,Y);box(c,118,28,4,56,G);box(c,66,80,56,4,G);
+ txt(c,"POCKET",90-tw("POCKET",2)/2,96,2,K);txt(c,"COMPANION",90-tw("COMPANION",1)/2,116,1,K);
+ const rows=[["SERVER","ON"],["CAPTURES","12"],["ASK LOG","9"],["DETOURS","4"]];
+ rows.forEach((r,i)=>{const y=136+i*48;box(c,12,y,156,38,i===0?K:Y);frame(c,12,y,156,38,3,K);const col=i===0?Y:K;txt(c,r[0],22,y+15,1,col);txt(c,r[1],158-tw(r[1],2),y+12,2,col);
+  if(i===0&&(t%60)<30)box(c,124,y+15,6,6,Y)});
+ txt(c,"192.168.1.42:8080",90-tw("192.168.1.42:8080",1)/2,340,1,K)}
+};
+const beats=[...document.querySelectorAll(".beat")];let cur=0;
+const dots=document.getElementById("dots");beats.forEach((b,i)=>{const d=document.createElement("b");d.title=b.dataset.label;d.onclick=e=>{e.stopPropagation();go(i)};dots.appendChild(d)});
+function go(i){cur=Math.max(0,Math.min(beats.length-1,i));beats.forEach((b,j)=>b.classList.toggle("on",j===cur));
+ [...dots.children].forEach((d,j)=>{d.className=j===cur?"on":(j<cur?"done":"")});
+ document.getElementById("ft").textContent=String(cur+1).padStart(2,"0")+" · "+beats[cur].dataset.label;history.replaceState(null,"","#"+(cur+1))}
+document.addEventListener("click",()=>go(cur+1));
+document.addEventListener("keydown",e=>{if([" ","ArrowRight","Enter","PageDown"].includes(e.key)){e.preventDefault();go(cur+1)}else if(["ArrowLeft","PageUp","Backspace"].includes(e.key)){e.preventDefault();go(cur-1)}else if(e.key==="Home")go(0);else if(e.key==="End")go(beats.length-1)});
+let tx=null;document.addEventListener("touchstart",e=>tx=e.touches[0].clientX,{passive:true});
+document.addEventListener("touchend",e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;if(dx>50){go(cur-1);e.preventDefault()}tx=null});
+go((parseInt(location.hash.slice(1))||1)-1);
+const cvs=[...document.querySelectorAll("canvas[data-s]")].map(el=>[el,el.getContext("2d")]);
+(function loop(){t++;for(const[el,c]of cvs)if(el.closest(".beat").classList.contains("on"))S[el.dataset.s](c);requestAnimationFrame(loop)})();
+</script>
+</body></html>
